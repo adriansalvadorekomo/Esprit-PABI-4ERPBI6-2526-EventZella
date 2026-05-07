@@ -201,3 +201,69 @@ def predict_forecast(data: InputForecast):
 def predict_sentiment(data: InputSentiment):
     return get_service().predict_sentiment(data)
 
+
+@router.get("/predict/revenue-forecast")
+def revenue_forecast(horizon: int = 6) -> dict:
+    import numpy as np
+    import pandas as pd
+    from fastapi import HTTPException
+
+    if horizon not in (4, 6, 12):
+        horizon = 6
+
+    # ── Load historical revenue from DB ──────────────────────
+    try:
+        engine = get_engine()
+        df = pd.read_sql(
+            """SELECT e.event_date, f.final_price
+               FROM fact_suivi_event f
+               LEFT JOIN dim_event e ON f.event_sk = e.event_sk
+               WHERE e.event_date IS NOT NULL AND f.final_price IS NOT NULL""",
+            engine,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Database unavailable: {exc}")
+
+    if df.empty:
+        raise HTTPException(status_code=404, detail="No revenue data found in the database.")
+
+    df["event_date"] = pd.to_datetime(df["event_date"], errors="coerce")
+    df = df.dropna(subset=["event_date"])
+
+    ts = (
+        df.set_index("event_date")["final_price"]
+        .resample("MS").sum()
+        .replace(0, np.nan)
+        .interpolate(method="time")
+        .ffill().bfill()
+    )
+
+    if len(ts) < 3:
+        raise HTTPException(status_code=422, detail="Not enough historical data to forecast.")
+
+    # ── Fit Holt's linear trend (robust for short series) ────
+    from statsmodels.tsa.holtwinters import ExponentialSmoothing
+    try:
+        model = ExponentialSmoothing(ts, trend="add", seasonal=None, initialization_method="estimated")
+        fit = model.fit(optimized=True, remove_bias=True)
+        raw = fit.forecast(horizon)
+    except Exception:
+        # Fallback: simple linear extrapolation
+        x = np.arange(len(ts))
+        slope, intercept = np.polyfit(x, ts.values, 1)
+        future_x = np.arange(len(ts), len(ts) + horizon)
+        raw = pd.Series(intercept + slope * future_x)
+
+    values = np.maximum(raw.values, 0)
+    start = ts.index[-1] + pd.DateOffset(months=1)
+    dates = pd.date_range(start, periods=horizon, freq="MS")
+
+    history = [
+        {"date": idx.strftime("%Y-%m-%d"), "value": round(float(v), 2)}
+        for idx, v in ts.tail(12).items()
+    ]
+    rows = [{"date": d.strftime("%Y-%m-%d"), "value": round(float(v), 2)}
+            for d, v in zip(dates, values)]
+
+    return {"status": "success", "model": "Revenue Forecast", "history": history, "forecast": rows}
+

@@ -55,7 +55,12 @@ export class ApiService {
     return this.http.post(`${this.fastapi}/train/fidelisation`, {});
   }
 
-  chatbot(message: string): Observable<ChatResponse> {
+
+  getRevenueForecast(horizon: number = 6): Observable<{status: string; model: string; history: {date: string; value: number}[]; forecast: {date: string; value: number}[]}> {
+    return this.http.get<{status: string; model: string; history: {date: string; value: number}[]; forecast: {date: string; value: number}[]}>(`${this.fastapi}/predict/revenue-forecast?horizon=${horizon}`);
+  }
+
+    chatbot(message: string): Observable<ChatResponse> {
     return this.http.post<ChatResponse>(`${this.fastapi}/chatbot`, { message });
   }
 

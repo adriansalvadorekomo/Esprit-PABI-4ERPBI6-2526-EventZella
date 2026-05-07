@@ -5,7 +5,7 @@
 **/dist
 .git
 backend/mlruns
-backend/models
+backend/models/*.pkl
 forecasting
 eda
 doc

@@ -19,6 +19,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 app = FastAPI(title="EventZella API")
 
+from prometheus_fastapi_instrumentator import Instrumentator
+Instrumentator().instrument(app).expose(app)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:4200", "http://127.0.0.1:4200"],
@@ -313,6 +316,35 @@ try:
     def train_fidelisation():
         return _get_svc().train_fidelisation()
 
+    @app.post("/train/forecast")
+    def train_forecast():
+        return _get_svc().train_forecast()
+
+    @app.post("/train/deep-learning")
+    def train_deep_learning():
+        svc = _get_svc()
+        import mlflow, mlflow.sklearn
+        mlflow.set_tracking_uri("file:./mlruns")
+        mlflow.set_experiment("mlp_loyalty")
+        with mlflow.start_run():
+            artifacts = svc._train_deep_learning_artifacts()
+            svc._deep_learning_artifacts = artifacts
+            mlflow.log_params({"hidden_layers": "128,64,32", "max_iter": 500, "early_stopping": True})
+            mlflow.log_metrics({
+                "accuracy": round(artifacts.accuracy, 4),
+                "f1_score": round(artifacts.f1_value, 4),
+                "auc": round(artifacts.auc, 4),
+                "iterations": artifacts.iterations,
+            })
+            mlflow.sklearn.log_model(artifacts.model, "model")
+        return {
+            "status": "success", "model": "MLPClassifier(128,64,32)",
+            "accuracy": round(artifacts.accuracy, 4),
+            "f1_score": round(artifacts.f1_value, 4),
+            "auc": round(artifacts.auc, 4),
+            "iterations": artifacts.iterations,
+        }
+
     @app.post("/predict/forecast")
     def predict_forecast(data: InputForecast):
         return _get_svc().predict_forecast(data)
@@ -328,6 +360,20 @@ try:
     @app.post("/predict/anomalies")
     def detect_anomalies():
         return _get_svc().detect_anomalies()
+
+    @app.get("/predict/revenue-forecast")
+    def revenue_forecast():
+        import csv as _csv, os as _os
+        csv_path = _os.path.join(BASE, "models", "ts_forecast.csv")
+        if not _os.path.exists(csv_path):
+            from fastapi import HTTPException as _HTTPException
+            raise _HTTPException(status_code=404, detail="Revenue forecast not available. Run Airflow pipeline first.")
+        rows = []
+        with open(csv_path, newline="") as f:
+            for row in _csv.DictReader(f):
+                rows.append({"date": row["ds"][:10], "value": round(float(row["yhat"]), 2)})
+        return {"status": "success", "model": "SARIMA + Box-Cox", "forecast": rows}
+
 
     @app.post("/predict/deep-learning")
     def predict_deep_learning(data: InputFidelisation):

@@ -38,7 +38,7 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
 
   readonly modelInfo: Record<string, { title: string; goal: string; fields: { name: string; desc: string }[]; benchmarks?: { name: string; desc: string; example: string }[] }> = {
     price: {
-      title: 'Price Prediction',
+      title: 'Smart Event Pricing',
       goal: 'This tool estimates the best final price for an event based on its characteristics. Think of it as a smart pricing advisor — you give it the event details and it tells you what price to expect.',
       fields: [
         { name: 'Price', desc: 'The base price you plan to charge.' },
@@ -53,7 +53,7 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
       ]
     },
     fidel: {
-      title: 'Fidelisation',
+      title: 'Client Return Likelihood',
       goal: 'This tool predicts whether a client will come back and book again. It gives you a loyalty score and tells you what action to take — like sending a personalized offer or just a newsletter.',
       fields: [
         { name: 'Price / Budget / Final Price', desc: 'The financial profile of the event.' },
@@ -67,13 +67,13 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
         { name: 'Month', desc: 'Which month the event happened.' },
       ],
       benchmarks: [
-        { name: 'Accuracy', desc: 'Out of all clients, how many did the model correctly classify as loyal or not loyal.', example: '85% accuracy means 85 out of 100 predictions were correct.' },
-        { name: 'Recall', desc: 'Out of all truly loyal clients, how many did the model successfully identify. High recall means fewer loyal clients are missed.', example: '78% recall means the model caught 78 out of every 100 genuinely loyal clients.' },
-        { name: 'ROC-AUC', desc: 'A score from 0 to 1 measuring how well the model separates loyal from non-loyal clients. 0.5 is random guessing; 1.0 is perfect.', example: '0.91 AUC means the model is excellent at ranking loyal clients above non-loyal ones.' },
+        { name: 'Correct Predictions', desc: 'Out of every 100 clients assessed, how many the model correctly classified as loyal or not loyal.', example: '85% means 85 out of 100 predictions were right.' },
+        { name: 'Loyal Clients Found', desc: 'Out of all truly loyal clients, how many the model successfully identified. A high score means fewer loyal clients are missed and left without a retention action.', example: '78% means the model caught 78 out of every 100 genuinely loyal clients.' },
+        { name: 'Prediction Confidence', desc: 'How reliably the model ranks a loyal client above a non-loyal one. Ranges from 50% (random guess) to 100% (perfect). The higher, the more trustworthy the output.', example: '91% means the model almost always correctly ranks a loyal client higher than a non-loyal one.' },
       ]
     },
     loyalty: {
-      title: 'Loyalty Score',
+      title: 'Client Loyalty Check',
       goal: 'Similar to Fidelisation but uses a different calculation method. It gives a simple Yes/No answer: will this client be loyal? Plus a confidence percentage.',
       fields: [
         { name: 'Price / Budget / Final Price', desc: 'The financial profile of the event.' },
@@ -84,7 +84,7 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
       ]
     },
     cluster: {
-      title: 'Clustering',
+      title: 'Event Profile Grouping',
       goal: 'This tool groups events into categories based on their profile. It helps you understand what "type" of event you are dealing with — Premium, Potential, or At-Risk — so you can treat each group differently.',
       fields: [
         { name: 'Budget / Price / Final Price', desc: 'The financial profile of the event.' },
@@ -95,33 +95,34 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
         { name: 'Reservation Status', desc: 'Whether the booking is confirmed, pending, or cancelled.' },
       ],
       benchmarks: [
-        { name: 'Silhouette Score', desc: 'Measures how well each event fits its assigned group vs. other groups. Ranges from -1 to 1. Higher is better.', example: '0.62 means events in the same cluster are clearly more similar to each other than to events in other clusters.' },
-        { name: 'Davies-Bouldin Score', desc: 'Measures how spread out and separated the clusters are. Lower is better — it means clusters are compact and far apart.', example: '0.85 is a good score; 2.5 would mean the clusters overlap too much.' },
-        { name: 'Clusters Detected', desc: 'The number of distinct groups the algorithm found in your data.', example: '3 clusters might represent Premium, Standard, and At-Risk event profiles.' },
+        { name: 'Group Clarity', desc: 'How well-defined each group is — are the events inside a group truly similar to each other? Ranges from -1 to 1. Closer to 1 means the groups are clean and meaningful.', example: '0.62 means events in the same group are clearly more similar to each other than to events in other groups.' },
+        { name: 'Group Separation', desc: 'How distinct the groups are from one another. Lower is better — it means the groups are compact and well apart, making them easier to act on differently.', example: '0.85 is a good score; 2.5 would mean the groups overlap too much to be useful.' },
+        { name: 'Groups Found', desc: 'The number of distinct event profiles the model identified in your data.', example: '3 groups might represent Premium, Standard, and At-Risk event profiles.' },
+        { name: 'Unclassified', desc: 'Events that did not fit clearly into any group — outliers or one-off cases worth reviewing manually.', example: '5 unclassified events means 5 events were too unusual to be placed in any group.' },
       ]
     },
     forecast: {
-      title: 'Demand Forecasting',
+      title: 'Booking Demand Forecast',
       goal: 'This tool looks at past booking history and predicts how many reservations to expect in the coming months. Like a weather forecast, but for your event demand.',
       fields: [
         { name: 'Category', desc: 'The type of events to forecast (e.g. Concerts, Weddings…).' },
         { name: 'Horizon', desc: 'How many months ahead you want to predict.' },
       ],
       benchmarks: [
-        { name: 'MAPE', desc: 'Mean Absolute Percentage Error — the average % gap between predicted and actual reservations. Lower is better.', example: '12% MAPE means the forecast is off by about 12 reservations for every 100 expected.' },
-        { name: 'MAE', desc: 'Mean Absolute Error — the average number of reservations the forecast misses per month, regardless of direction.', example: 'MAE of 8 means the model is typically off by 8 reservations per month.' },
-        { name: 'RMSE', desc: 'Root Mean Square Error — similar to MAE but penalizes large errors more heavily. Useful for spotting months with big misses.', example: 'RMSE of 15 with MAE of 8 means there are occasional months with much larger errors.' },
+        { name: 'Avg. Error Rate', desc: 'On average, how far off the forecast is from reality, expressed as a percentage. Lower is better — 0% would mean perfect predictions.', example: '12% means the forecast is typically off by about 12 bookings for every 100 expected.' },
+        { name: 'Typical Miss', desc: 'The average number of bookings the forecast misses per month — either over- or under-estimating. Think of it as the day-to-day margin of error.', example: 'A Typical Miss of 8 means the model is usually off by about 8 bookings per month.' },
+        { name: 'Worst-Case Miss', desc: 'Similar to Typical Miss, but gives more weight to the months where the forecast was furthest off. Useful for spotting if there are occasional big surprises.', example: 'If Typical Miss is 8 but Worst-Case Miss is 20, there are a few months with much larger errors worth investigating.' },
       ]
     },
     sentiment: {
-      title: 'Sentiment Analysis',
+      title: 'Client Feedback Tone',
       goal: 'Paste any client review or feedback text and this tool instantly tells you if it is Positive, Negative, or Neutral. No reading required — it reads it for you.',
       fields: [
         { name: 'Review Text', desc: 'Any written feedback from a client, in any language.' },
       ]
     },
     reco: {
-      title: 'Event Recommendations',
+      title: 'Personalized Event Suggestions',
       goal: 'Given a client ID, this tool suggests events they are most likely to enjoy based on what similar clients have attended. Like a "You might also like…" feature.',
       fields: [
         { name: 'Beneficiary ID', desc: 'The unique ID of the client in your system.' },
@@ -129,23 +130,32 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
       ]
     },
     anomaly: {
-      title: 'Anomaly Detection',
+      title: 'Unusual Activity Alert',
       goal: 'This tool scans all your event financial data and flags anything that looks unusual — events with abnormal prices, budgets, or visitor numbers. Think of it as a fraud or error detector.',
       fields: [
         { name: '(No inputs needed)', desc: 'The tool automatically analyzes all events in the database.' },
       ]
     },
+    revenue: {
+      title: 'Revenue Outlook',
+      goal: 'Think of this as a financial weather forecast for your business. By studying how your revenue has behaved over the past months — its ups, downs, and seasonal patterns — the system projects what your income is likely to look like over the next 6 months. You do not need to enter anything; it runs automatically every night on fresh data.',
+      fields: [
+        { name: 'No input required', desc: 'The forecast is computed automatically from your historical revenue data. Just open the panel and the chart loads instantly.' },
+        { name: 'Projected Revenue', desc: 'The estimated income for each upcoming month, shown as a bar chart so you can spot growth or slowdowns at a glance.' },
+        { name: 'Monthly Trend', desc: 'The shape of the bars tells the story — rising bars mean growth is expected, flat or falling bars signal a slower period ahead.' },
+      ]
+    },
     dl: {
-      title: 'Deep Learning (MLP)',
+      title: 'Advanced Loyalty Predictor',
       goal: 'A more powerful version of the Fidelisation model. It uses a neural network — a system inspired by the human brain — to predict loyalty. It takes the same inputs as Fidelisation but can detect more complex patterns.',
       fields: [
         { name: '(Same inputs as Fidelisation)', desc: 'Fill the Fidelisation form first, then run this model for a second opinion.' },
       ],
       benchmarks: [
-        { name: 'Accuracy', desc: 'The percentage of clients correctly classified as loyal or not loyal during testing.', example: '88% accuracy means 88 out of 100 test predictions were correct.' },
-        { name: 'F1 Score', desc: 'A balance between catching loyal clients (recall) and not falsely labeling non-loyal ones (precision). Useful when the data is imbalanced.', example: '0.84 F1 means the model is both precise and thorough in identifying loyal clients.' },
-        { name: 'AUC', desc: 'Area Under the Curve — how well the model ranks loyal clients above non-loyal ones. 1.0 is perfect; 0.5 is random.', example: '0.93 AUC means the model almost always ranks a truly loyal client higher than a non-loyal one.' },
-        { name: 'Iterations', desc: 'How many training rounds the neural network completed before converging. More is not always better — early stopping prevents overfitting.', example: '47 iterations means the network found its optimal weights after 47 passes through the training data.' },
+        { name: 'Correct Predictions', desc: 'Out of every 100 clients assessed, how many the model correctly classified as loyal or not loyal.', example: '88% means 88 out of 100 test predictions were correct.' },
+        { name: 'Balanced Score', desc: 'A combined measure of how precise and thorough the model is. Useful when loyal and non-loyal clients are not equally represented in the data. Closer to 100% is better.', example: '84% means the model is both precise and thorough in identifying loyal clients.' },
+        { name: 'Prediction Confidence', desc: 'How reliably the model ranks a loyal client above a non-loyal one. 50% is a random guess; 100% is perfect.', example: '93% means the model almost always correctly ranks a truly loyal client higher than a non-loyal one.' },
+        { name: 'Training Rounds', desc: 'How many learning cycles the model completed before reaching its best performance. More rounds are not always better — the model stops automatically when it stops improving.', example: '47 rounds means the model found its optimal performance after 47 passes through the training data.' },
       ]
     },
   };
@@ -202,6 +212,11 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
   forecastResult = signal<ForecastResponse | null>(null);
   forecastLoading = signal(false);
   forecastError = signal<string | null>(null);
+  revenueForecast = signal<{date: string; value: number}[] | null>(null);
+  revenueHistory  = signal<{date: string; value: number}[] | null>(null);
+  revenueLoading = signal(false);
+  revenueError = signal<string | null>(null);
+  revenueHorizon = signal<4 | 6 | 12>(6);
   categories = signal<string[]>([]);
 
   // ── NEW: Sentiment ────────────────────────────────────────────────────────
@@ -292,6 +307,9 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
     if (typeof window === 'undefined') return;
     const gsap = (window as any).gsap;
     this.selectedModel.set(id);
+    if (id === 'revenue') {
+      this.runRevenueForecast();
+    }
     if (id && gsap) {
       setTimeout(() => {
         gsap.from('.catalog-panel', {
@@ -354,6 +372,38 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
     return ((historyLength - 1) / (total - 1)) * 100;
   }
 
+  get revenueForecastData(): ForecastResponse | null {
+    const f = this.revenueForecast();
+    if (!f) return null;
+    return { status: 'success', forecast: f, history: this.revenueHistory() ?? [] };
+  }
+
+  shortNumber(v: number): string {
+    if (v >= 1_000_000) return (v / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+    if (v >= 1_000) return (v / 1_000).toFixed(1).replace(/\.0$/, '') + 'K';
+    return v.toFixed(0);
+  }
+
+  get revenueNextMonth(): number {
+    return this.revenueForecast()?.[0]?.value ?? 0;
+  }
+  get revenueMonthlyAvg(): number {
+    const f = this.revenueForecast();
+    if (!f?.length) return 0;
+    return f.reduce((s, p) => s + p.value, 0) / f.length;
+  }
+  get revenueTotal(): number {
+    return this.revenueForecast()?.reduce((s, p) => s + p.value, 0) ?? 0;
+  }
+  get revenueMax(): number {
+    const f = this.revenueForecast();
+    if (!f?.length) return 1;
+    return Math.max(...f.map(p => p.value), 1);
+  }
+  revenueBarHeight(value: number): number {
+    return (value / this.revenueMax) * 100;
+  }
+
   get anomalyRatePercent(): number | null {
     const result = this.anomalyResult();
     if (!result || !result.total_count) return null;
@@ -412,6 +462,7 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
     });
   }
 
+
   runLoyaltyPredict(): void {
     this.loyaltyLoading.set(true);
     this.loyaltyResult.set(null);
@@ -429,6 +480,17 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
     this.api.predictCluster(this.clusterForm).subscribe({
       next: (res) => { this.clusterResult.set(res); this.clusterLoading.set(false); this.animateResult('.cluster-result'); },
       error: (e)  => { this.clusterError.set(e?.error?.detail ?? e?.error?.error ?? 'API unreachable.'); this.clusterLoading.set(false); }
+    });
+  }
+
+  runRevenueForecast(): void {
+    this.revenueLoading.set(true);
+    this.revenueForecast.set(null);
+    this.revenueHistory.set(null);
+    this.revenueError.set(null);
+    this.api.getRevenueForecast(this.revenueHorizon()).subscribe({
+      next: (res) => { this.revenueForecast.set(res.forecast); this.revenueHistory.set(res.history ?? []); this.revenueLoading.set(false); },
+      error: (e) => { this.revenueError.set(e?.error?.detail ?? "Revenue forecast unavailable."); this.revenueLoading.set(false); }
     });
   }
 
