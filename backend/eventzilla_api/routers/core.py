@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 import pandas as pd
 
 from ..schemas.ml import InputFidelisation, InputForecast, InputSentiment, PricePredictRequest
@@ -23,6 +23,34 @@ def home() -> dict:
         "docs": "/docs",
         "health": "/health",
     }
+
+
+# ── Role-based chatbot enforcement ───────────────────────────
+_ROLE_TOPICS: dict[str, list[str]] = {
+    "marketing":   ["customer loyalty","client feedback","personalized event","customer segmentation",
+                    "campaign","visitor engagement","marketing kpi","retention","satisfaction",
+                    "engagement","recommendation","sentiment","channel","beneficiar"],
+    "quality":     ["client satisfaction","service quality","return likelihood","feedback",
+                    "unusual activity","complaint","quality kpi","rating","review",
+                    "negative","provider quality","satisfaction trend"],
+    "operational": ["booking demand","event profile","operational","planning","traffic",
+                    "unusual activity","reservation","anomaly","forecast","season",
+                    "busiest","visitor flow","overload","peak"],
+    "business":    ["pricing","revenue","profitability","business kpi","strategic",
+                    "financial","provider performance","profit","income","earnings",
+                    "cost","budget","price","quarter","forecast revenue"],
+}
+_DENIED_REPLY = "You do not have access to this topic. Please contact the administrator."
+
+def _role_allowed(role: str, question: str) -> bool:
+    if role == "admin" or not role:
+        return True
+    topics = _ROLE_TOPICS.get(role, [])
+    q = question.lower()
+    allowed = any(t in q for t in topics)
+    if not allowed:
+        print(f"[CHATBOT] DENIED role={role!r} question={question!r}")
+    return allowed
 
 
 
@@ -60,8 +88,14 @@ def _ask_groq(message: str, db_context: str) -> str:
 
 
 @router.post("/chatbot")
-def chatbot(body: dict) -> dict:
+def chatbot(body: dict, request: Request) -> dict:
+    role = (request.headers.get("X-User-Role") or "").strip().lower()
     message = (body.get("message") or "").strip()
+
+    if not _role_allowed(role, message):
+        return {"reply": _DENIED_REPLY, "sql": None, "data": [],
+                "type": "general", "chart_type": None, "status": "denied"}
+
     engine  = get_engine()
 
     # Fetch live KPI context

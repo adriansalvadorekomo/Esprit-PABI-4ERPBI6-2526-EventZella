@@ -40,7 +40,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
   submit(): void {
     const err = this.auth.signIn(this.email(), this.password());
     if (err) { this.loginError.set(err); }
-    else      { this.closeModal(); }
+    else      { this.closeModal(); window.location.hash = 'lab'; }
   }
 
   onKeydown(e: KeyboardEvent): void { if (e.key === 'Enter') this.submit(); }

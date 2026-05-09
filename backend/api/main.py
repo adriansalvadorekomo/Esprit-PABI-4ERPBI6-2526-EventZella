@@ -6,7 +6,7 @@ import re
 import numpy as np
 import pandas as pd
 import joblib
-from fastapi import FastAPI
+from fastapi import FastAPI, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sklearn.neighbors import NearestNeighbors
@@ -24,7 +24,7 @@ Instrumentator().instrument(app).expose(app)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:4200", "http://127.0.0.1:4200"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -187,6 +187,30 @@ class PredictRequest(BaseModel):
 class ChatRequest(BaseModel):
     message: str
 
+# ── Role-based topic enforcement ─────────────────────────────
+ROLE_TOPICS: dict[str, list[str]] = {
+    "marketing":   ["customer loyalty","client feedback","personalized event","customer segmentation",
+                    "campaign","visitor engagement","marketing kpi","retention","satisfaction",
+                    "engagement","recommendation","sentiment","channel","beneficiar"],
+    "quality":     ["client satisfaction","service quality","return likelihood","feedback",
+                    "unusual activity","complaint","quality kpi","rating","review",
+                    "negative","provider quality","satisfaction trend"],
+    "operational": ["booking demand","event profile","operational","planning","traffic",
+                    "unusual activity","reservation","anomaly","forecast","season",
+                    "busiest","visitor flow","overload","peak"],
+    "business":    ["pricing","revenue","profitability","business kpi","strategic",
+                    "financial","provider performance","profit","income","earnings",
+                    "cost","budget","price","quarter","forecast revenue"],
+}
+DENIED_REPLY = "You do not have access to this topic. Please contact the administrator."
+
+def _role_allowed(role: str, question: str) -> bool:
+    if role == "admin" or not role:
+        return True
+    topics = ROLE_TOPICS.get(role, [])
+    q = question.lower()
+    return any(t in q for t in topics)
+
 class ClusterRequest(BaseModel):
     budget: float = 0
     price: float = 0
@@ -287,7 +311,6 @@ try:
         InputForecast, InputSentiment
     )
     from eventzilla_api.db import get_engine as _get_engine
-    from fastapi import Query
 
     _svc = None
     def _get_svc():
@@ -385,7 +408,15 @@ except Exception as _e:
 
 
 @app.post("/chatbot")
-def chatbot(body: ChatRequest):
+def chatbot(body: ChatRequest, request: Request):
+    role = (request.headers.get("X-User-Role") or "").strip().lower()
+    question = body.message.strip()
+
+    if not _role_allowed(role, question):
+        print(f"[CHATBOT] DENIED role={role!r} question={question!r}")
+        return {"reply": DENIED_REPLY, "sql": None, "data": [], "type": "general",
+                "chart_type": None, "status": "denied"}
+
     client = _get_groq_client()
     if client is None:
         return {"reply": "Chatbot API key is missing.", "sql": None, "data": [], "type": "general", "status": "error"}

@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 *.pyo
 .venv/
+venv/
 *.egg-info/
 
 # ML artifacts (large binaries)
@@ -21,6 +22,15 @@ docker/postgres-init/init.sql
 
 # Env
 .env
+
+# Logs
+*.log
+*.out.log
+*.err.log
+
+# Test / temp
+backend/test_chatbot_roles.py
+backend/mlflow.db
 
 # OS
 .DS_Store

@@ -9,11 +9,11 @@
         <lucide-icon name="home" [size]="18"></lucide-icon>
         <span>Overview</span>
       </a>
-      <a *ngIf="auth.isAdmin" class="nav-link" (click)="navigate('dashboards')">
+      <a *ngIf="auth.isLoggedIn()" class="nav-link" (click)="navigate('dashboards')">
         <lucide-icon name="layout-dashboard" [size]="18"></lucide-icon>
         <span>Dashboards</span>
       </a>
-      <a *ngIf="auth.isAdmin" class="nav-link" (click)="navigate('lab')">
+      <a *ngIf="auth.isLoggedIn()" class="nav-link" (click)="navigate('lab')">
         <lucide-icon name="flask-conical" [size]="18"></lucide-icon>
         <span>Lab</span>
       </a>
@@ -32,7 +32,7 @@
         <span>Sign In</span>
       </button>
       <ng-container *ngIf="auth.isLoggedIn()">
-        <div class="user-badge">{{ auth.userName() }}</div>
+        <div class="user-badge">{{ auth.userEmail() }}</div>
         <button class="btn-signout" (click)="auth.signOut()">
           <lucide-icon name="log-out" [size]="18"></lucide-icon>
           <span>Sign Out</span>
@@ -48,11 +48,11 @@
       <lucide-icon name="home" [size]="18"></lucide-icon>
       <span>Overview</span>
     </a>
-    <a *ngIf="auth.isAdmin" class="nav-link" (click)="navigate('dashboards')">
+    <a *ngIf="auth.isLoggedIn()" class="nav-link" (click)="navigate('dashboards')">
       <lucide-icon name="layout-dashboard" [size]="18"></lucide-icon>
       <span>Dashboards</span>
     </a>
-    <a *ngIf="auth.isAdmin" class="nav-link" (click)="navigate('lab')">
+    <a *ngIf="auth.isLoggedIn()" class="nav-link" (click)="navigate('lab')">
       <lucide-icon name="flask-conical" [size]="18"></lucide-icon>
       <span>Lab</span>
     </a>

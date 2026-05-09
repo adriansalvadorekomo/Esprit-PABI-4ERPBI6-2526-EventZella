@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, signal, AfterViewInit, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, computed, AfterViewInit, ElementRef } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ApiService } from '../services/api.service';
 import { AuthService } from '../services/auth.service';
@@ -15,6 +15,24 @@ import {
 
 type Section = 'overview' | 'dashboards' | 'lab' | 'about';
 const PROTECTED: Section[] = ['dashboards', 'lab'];
+
+const ALL_MODELS = ['price', 'fidel', 'loyalty', 'cluster', 'forecast', 'revenue', 'sentiment', 'reco', 'anomaly', 'dl'];
+
+const MODELS_BY_ROLE: Record<string, string[]> = {
+  marketing:   ['loyalty', 'sentiment', 'reco', 'dl'],
+  quality:     ['fidel', 'sentiment', 'anomaly'],
+  operational: ['forecast', 'cluster', 'anomaly'],
+  business:    ['price', 'revenue', 'dl'],
+  admin:       ALL_MODELS,
+};
+
+const ROLE_LABELS: Record<string, string> = {
+  marketing:   'Marketing Decision Maker',
+  quality:     'Quality Decision Maker',
+  operational: 'Operational Decision Maker',
+  business:    'Business Decision Maker',
+  admin:       'Admin',
+};
 
 @Component({
   selector: 'app-home',
@@ -35,6 +53,20 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
   selectedModel = signal<string | null>(null);
   modelInfoVisible = signal(false);
   modelInfoKey = signal<string | null>(null);
+
+  readonly filteredModels = computed<string[]>(() => {
+    const role = this.auth.role();
+    return MODELS_BY_ROLE[role] ?? [];
+  });
+
+  readonly roleSubtitle = computed<string>(() => {
+    const role = this.auth.role();
+    if (!role) return '';
+    const label = ROLE_LABELS[role] ?? role;
+    return role === 'admin'
+      ? 'Admin Access — All Models Available'
+      : `Models available for ${label}`;
+  });
 
   readonly modelInfo: Record<string, { title: string; goal: string; fields: { name: string; desc: string }[]; benchmarks?: { name: string; desc: string; example: string }[] }> = {
     price: {
@@ -268,7 +300,7 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private readHash(): void {
     const hash = (window.location.hash.replace('#', '') || 'overview') as Section;
-    if (PROTECTED.includes(hash) && !this.auth.isAdmin) {
+    if (PROTECTED.includes(hash) && !this.auth.isLoggedIn()) {
       this.activeSection.set('overview');
       window.location.hash = 'overview';
     } else {
@@ -325,7 +357,7 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   isProtectedAndLocked(section: Section): boolean {
-    return PROTECTED.includes(section) && !this.auth.isAdmin;
+    return PROTECTED.includes(section) && !this.auth.isLoggedIn();
   }
 
   get forecastTotalReservations(): number {

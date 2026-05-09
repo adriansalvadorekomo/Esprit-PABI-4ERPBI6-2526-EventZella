@@ -1,5 +1,5 @@
 import {
-  Component, signal, inject, ViewChild, ElementRef,
+  Component, signal, inject, computed, ViewChild, ElementRef,
   AfterViewChecked, OnDestroy
 } from '@angular/core';
 import {
@@ -8,6 +8,8 @@ import {
   Tooltip, Legend, Filler
 } from 'chart.js';
 import { ApiService, ChatResponse } from '../services/api.service';
+import { AuthService } from '../services/auth.service';
+import { CHATBOT_ROLES } from '../services/chatbot-roles.config';
 
 Chart.register(
   BarController, BarElement, CategoryScale, LinearScale,
@@ -35,25 +37,24 @@ interface Message {
 })
 export class ChatbotComponent implements AfterViewChecked, OnDestroy {
   @ViewChild('msgEnd') private msgEnd!: ElementRef;
-  private readonly api = inject(ApiService);
+  private readonly api  = inject(ApiService);
+  private readonly auth = inject(AuthService);
   private charts = new Map<string, Chart>();
 
   open     = signal(false);
   input    = signal('');
+
+  private get roleConfig() {
+    const role = this.auth.role();
+    return CHATBOT_ROLES[role] ?? CHATBOT_ROLES['admin'];
+  }
+
+  get roleTitle(): string { return this.roleConfig.title; }
+  get quickQuestions(): string[] { return this.roleConfig.quickSuggestions; }
+
   messages = signal<Message[]>([
     { role: 'bot', text: "Hi! I'm the EventZella AI Assistant. Ask me anything about your events data." }
   ]);
-
-  readonly quickQuestions = [
-    'Show events by season',
-    'Top 5 providers by reservations',
-    'Show reservations by status',
-    'What is the average rating?',
-    'Which event category has the most events?',
-    'Show visitor trend by month',
-    'What is the total revenue?',
-    'Which providers have the lowest ratings?',
-  ];
 
   toggle(): void { this.open.update(v => !v); }
   tableKeys(row: Record<string, unknown>): string[] { return Object.keys(row); }
@@ -66,7 +67,7 @@ export class ChatbotComponent implements AfterViewChecked, OnDestroy {
     this.input.set('');
     this.messages.update(m => [...m, { role: 'bot', text: '', loading: true }]);
 
-    this.api.chatbot(text).subscribe({
+    this.api.chatbot(text, this.auth.role()).subscribe({
       next: (res: ChatResponse) => {
         const chartId = res.type === 'chart' && res.data?.length
           ? `chart-${Date.now()}` : undefined;

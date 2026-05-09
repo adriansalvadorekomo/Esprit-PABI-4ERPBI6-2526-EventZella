@@ -214,70 +214,71 @@
 
     <!-- Model catalog -->
     <div *ngIf="!selectedModel()" class="catalog-grid">
-      <div class="catalog-card" (click)="selectModel('price')">
+      <p *ngIf="roleSubtitle()" class="role-subtitle" style="grid-column:1/-1;text-align:center;font-size:0.85rem;color:var(--text-muted,#8b949e);margin-bottom:0.5rem;">{{ roleSubtitle() }}</p>
+      <div class="catalog-card" *ngIf="filteredModels().includes('price')" (click)="selectModel('price')">
         <div class="catalog-card-header">
           <div class="catalog-icon" style="background:rgba(56,139,253,0.1);color:#388bfd"><lucide-icon name="bar-chart-2" [size]="22"></lucide-icon></div>
           <button nz-button nzType="text" class="info-btn" (click)="openModelInfo('price', $event)"><lucide-icon name="info" [size]="16"></lucide-icon></button>
         </div>
         <h3 class="catalog-title">Smart Event Pricing</h3>
       </div>
-      <div class="catalog-card" (click)="selectModel('fidel')">
+      <div class="catalog-card" *ngIf="filteredModels().includes('fidel')" (click)="selectModel('fidel')">
         <div class="catalog-card-header">
           <div class="catalog-icon" style="background:rgba(163,113,247,0.1);color:#a371f7"><lucide-icon name="trending-up" [size]="22"></lucide-icon></div>
           <button nz-button nzType="text" class="info-btn" (click)="openModelInfo('fidel', $event)"><lucide-icon name="info" [size]="16"></lucide-icon></button>
         </div>
         <h3 class="catalog-title">Client Return Likelihood</h3>
       </div>
-      <div class="catalog-card" (click)="selectModel('loyalty')">
+      <div class="catalog-card" *ngIf="filteredModels().includes('loyalty')" (click)="selectModel('loyalty')">
         <div class="catalog-card-header">
           <div class="catalog-icon" style="background:rgba(63,185,80,0.1);color:#3fb950"><lucide-icon name="users" [size]="22"></lucide-icon></div>
           <button nz-button nzType="text" class="info-btn" (click)="openModelInfo('loyalty', $event)"><lucide-icon name="info" [size]="16"></lucide-icon></button>
         </div>
         <h3 class="catalog-title">Client Loyalty Check</h3>
       </div>
-      <div class="catalog-card" (click)="selectModel('cluster')">
+      <div class="catalog-card" *ngIf="filteredModels().includes('cluster')" (click)="selectModel('cluster')">
         <div class="catalog-card-header">
           <div class="catalog-icon" style="background:rgba(251,191,36,0.1);color:#fbbf24"><lucide-icon name="zap" [size]="22"></lucide-icon></div>
           <button nz-button nzType="text" class="info-btn" (click)="openModelInfo('cluster', $event)"><lucide-icon name="info" [size]="16"></lucide-icon></button>
         </div>
         <h3 class="catalog-title">Event Profile Grouping</h3>
       </div>
-      <div class="catalog-card" (click)="selectModel('forecast')">
+      <div class="catalog-card" *ngIf="filteredModels().includes('forecast')" (click)="selectModel('forecast')">
         <div class="catalog-card-header">
           <div class="catalog-icon" style="background:rgba(247,120,186,0.1);color:#f778ba"><lucide-icon name="lightbulb" [size]="22"></lucide-icon></div>
           <button nz-button nzType="text" class="info-btn" (click)="openModelInfo('forecast', $event)"><lucide-icon name="info" [size]="16"></lucide-icon></button>
         </div>
         <h3 class="catalog-title">Booking Demand Forecast</h3>
       </div>
-      <div class="catalog-card" (click)="selectModel('revenue')">
+      <div class="catalog-card" *ngIf="filteredModels().includes('revenue')" (click)="selectModel('revenue')">
         <div class="catalog-card-header">
           <div class="catalog-icon" style="background:rgba(63,185,80,0.1);color:#3fb950"><lucide-icon name="trending-up" [size]="22"></lucide-icon></div>
           <button nz-button nzType="text" class="info-btn" (click)="openModelInfo('revenue', $event)"><lucide-icon name="info" [size]="16"></lucide-icon></button>
         </div>
         <h3 class="catalog-title">Revenue Forecast</h3>
       </div>
-      <div class="catalog-card" (click)="selectModel('sentiment')">
+      <div class="catalog-card" *ngIf="filteredModels().includes('sentiment')" (click)="selectModel('sentiment')">
         <div class="catalog-card-header">
           <div class="catalog-icon" style="background:rgba(163,113,247,0.1);color:#a371f7"><lucide-icon name="brain" [size]="22"></lucide-icon></div>
           <button nz-button nzType="text" class="info-btn" (click)="openModelInfo('sentiment', $event)"><lucide-icon name="info" [size]="16"></lucide-icon></button>
         </div>
         <h3 class="catalog-title">Client Feedback Tone</h3>
       </div>
-      <div class="catalog-card" (click)="selectModel('reco')">
+      <div class="catalog-card" *ngIf="filteredModels().includes('reco')" (click)="selectModel('reco')">
         <div class="catalog-card-header">
           <div class="catalog-icon" style="background:rgba(56,139,253,0.1);color:#388bfd"><lucide-icon name="rocket" [size]="22"></lucide-icon></div>
           <button nz-button nzType="text" class="info-btn" (click)="openModelInfo('reco', $event)"><lucide-icon name="info" [size]="16"></lucide-icon></button>
         </div>
         <h3 class="catalog-title">Personalized Event Suggestions</h3>
       </div>
-      <div class="catalog-card" (click)="selectModel('anomaly')">
+      <div class="catalog-card" *ngIf="filteredModels().includes('anomaly')" (click)="selectModel('anomaly')">
         <div class="catalog-card-header">
           <div class="catalog-icon" style="background:rgba(248,81,73,0.1);color:#f85149"><lucide-icon name="shield" [size]="22"></lucide-icon></div>
           <button nz-button nzType="text" class="info-btn" (click)="openModelInfo('anomaly', $event)"><lucide-icon name="info" [size]="16"></lucide-icon></button>
         </div>
         <h3 class="catalog-title">Unusual Activity Alert</h3>
       </div>
-      <div class="catalog-card" (click)="selectModel('dl')">
+      <div class="catalog-card" *ngIf="filteredModels().includes('dl')" (click)="selectModel('dl')">
         <div class="catalog-card-header">
           <div class="catalog-icon" style="background:rgba(63,185,80,0.1);color:#3fb950"><lucide-icon name="award" [size]="22"></lucide-icon></div>
           <button nz-button nzType="text" class="info-btn" (click)="openModelInfo('dl', $event)"><lucide-icon name="info" [size]="16"></lucide-icon></button>

@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
   PricePredictRequest, PricePredictResponse,
@@ -60,8 +60,9 @@ export class ApiService {
     return this.http.get<{status: string; model: string; history: {date: string; value: number}[]; forecast: {date: string; value: number}[]}>(`${this.fastapi}/predict/revenue-forecast?horizon=${horizon}`);
   }
 
-    chatbot(message: string): Observable<ChatResponse> {
-    return this.http.post<ChatResponse>(`${this.fastapi}/chatbot`, { message });
+  chatbot(message: string, role: string = ''): Observable<ChatResponse> {
+    const headers = new HttpHeaders({ 'X-User-Role': role });
+    return this.http.post<ChatResponse>(`${this.fastapi}/chatbot`, { message }, { headers });
   }
 
   getCategories(): Observable<string[]> {
