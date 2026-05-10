@@ -57,6 +57,7 @@ export interface ForecastResponse {
   status: string;
   category?: string;
   model?: string;
+  best_model?: string;
   history?: Array<{
     date: string;
     value: number;

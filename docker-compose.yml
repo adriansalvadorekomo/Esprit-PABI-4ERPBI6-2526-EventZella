@@ -19,6 +19,7 @@ services:
       retries: 5
 
   fastapi:
+    image: eventzilla-fastapi:latest
     build:
       context: .
       dockerfile: backend.Dockerfile
@@ -40,9 +41,10 @@ services:
       - "5001:5001"
     command: >
       bash -c "mlflow ui --host 0.0.0.0 --port 5001 --backend-store-uri file:./mlruns &
-               uvicorn main:app --host 0.0.0.0 --port 8000"
+               uvicorn api.main:app --host 0.0.0.0 --port 8000"
 
   flask:
+    image: eventzilla-fastapi:latest
     build:
       context: .
       dockerfile: backend.Dockerfile
@@ -81,15 +83,16 @@ services:
     ports:
       - "5678:5678"
     environment:
-      DB_TYPE: postgresdb
-      DB_POSTGRESDB_HOST: postgres
-      DB_POSTGRESDB_PORT: 5432
-      DB_POSTGRESDB_DATABASE: ${POSTGRES_DB}
-      DB_POSTGRESDB_USER: ${POSTGRES_USER}
-      DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD}
-      N8N_BASIC_AUTH_ACTIVE: "true"
-      N8N_BASIC_AUTH_USER: ${N8N_USER:-admin}
-      N8N_BASIC_AUTH_PASSWORD: ${N8N_PASSWORD:-admin}
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
+      - DB_POSTGRESDB_USER=${POSTGRES_USER}
+      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=${N8N_USER:-admin}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD:-admin}
+      - WEBHOOK_URL=http://localhost:5678/
     volumes:
       - n8n_data:/home/node/.n8n
     depends_on:

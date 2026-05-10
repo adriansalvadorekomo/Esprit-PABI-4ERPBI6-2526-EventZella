@@ -246,6 +246,7 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
   forecastError = signal<string | null>(null);
   revenueForecast = signal<{date: string; value: number}[] | null>(null);
   revenueHistory  = signal<{date: string; value: number}[] | null>(null);
+  revenueModel    = signal<string | null>(null);
   revenueLoading = signal(false);
   revenueError = signal<string | null>(null);
   revenueHorizon = signal<4 | 6 | 12>(6);
@@ -405,9 +406,14 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   get revenueForecastData(): ForecastResponse | null {
-    const f = this.revenueForecast();
-    if (!f) return null;
-    return { status: 'success', forecast: f, history: this.revenueHistory() ?? [] };
+    const forecast = this.revenueForecast();
+    if (!forecast) return null;
+    return {
+      status: 'success',
+      model: this.revenueModel() ?? undefined,
+      forecast,
+      history: this.revenueHistory() ?? []
+    };
   }
 
   shortNumber(v: number): string {
@@ -519,9 +525,15 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
     this.revenueLoading.set(true);
     this.revenueForecast.set(null);
     this.revenueHistory.set(null);
+    this.revenueModel.set(null);
     this.revenueError.set(null);
     this.api.getRevenueForecast(this.revenueHorizon()).subscribe({
-      next: (res) => { this.revenueForecast.set(res.forecast); this.revenueHistory.set(res.history ?? []); this.revenueLoading.set(false); },
+      next: (res) => {
+        this.revenueForecast.set(res.forecast);
+        this.revenueHistory.set(res.history ?? []);
+        this.revenueModel.set(res.model ?? null);
+        this.revenueLoading.set(false);
+      },
       error: (e) => { this.revenueError.set(e?.error?.detail ?? "Revenue forecast unavailable."); this.revenueLoading.set(false); }
     });
   }

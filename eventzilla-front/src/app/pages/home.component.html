@@ -535,7 +535,7 @@
       </div>
     </div>
 
-    <!-- ── Revenue Forecast panel (SARIMA) ── -->
+    <!-- ── Revenue Forecast panel (best model) ── -->
     <div *ngIf="selectedModel() === 'revenue'" class="catalog-panel">
       <button nz-button nzType="default" class="panel-back" (click)="selectModel(null)"><span>←</span> Back to Models</button>
       <h3 class="panel-title">Revenue Outlook</h3>
@@ -557,6 +557,9 @@
       <p *ngIf="revenueError()" class="panel-error">{{ revenueError() }}</p>
 
       <div *ngIf="revenueForecast() && !revenueLoading()" class="panel-result revenue-chart-result">
+        <div class="result-meta" *ngIf="revenueForecastData?.model">
+          Best model applied: {{ revenueForecastData!.model }}
+        </div>
         <div class="kpi-row" style="margin-bottom:20px">
           <div class="kpi-card kpi-accent">
             <span class="kpi-val">{{ shortNumber(revenueNextMonth) }}</span>

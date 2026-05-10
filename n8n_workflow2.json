@@ -1,0 +1,1573 @@
+{
+  "name": "My workflow 2",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "name": "Replace Me",
+      "typeVersion": 1,
+      "position": [
+        -512,
+        192
+      ],
+      "id": "095bd17e-296d-422a-859a-bec63200525d",
+      "placeholder": true
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM view_event_analysis\n  LIMIT 10;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        208,
+        128
+      ],
+      "id": "94c8a2b7-1b00-484e-bde9-331eb066ebe9",
+      "name": "Chargement vue pour clustering",
+      "credentials": {
+        "postgres": {
+          "id": "GuXQ4ZWVBc0pJBzP",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "batchSize": 120,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        480,
+        128
+      ],
+      "id": "2429cfed-5df4-4502-98db-fc60e5dda0d3",
+      "name": "parcourir les lignes par 50",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1Z3fzBE0LdsjUzOVOpZer0R6xpiSaslvybFf_WgdZ9ro",
+          "mode": "list",
+          "cachedResultName": "Feuille de calcul sans titre",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Z3fzBE0LdsjUzOVOpZer0R6xpiSaslvybFf_WgdZ9ro/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 338071661,
+          "mode": "list",
+          "cachedResultName": "kmeans",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Z3fzBE0LdsjUzOVOpZer0R6xpiSaslvybFf_WgdZ9ro/edit#gid=338071661"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "algorithm": "={{$json.algorithm}}",
+            "cluster_id": "={{$json.cluster_id}}",
+            "status": "={{ $json.status }}",
+            "cluster_name": "={{ $json.cluster_name }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "algorithm",
+              "displayName": "algorithm",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "cluster_id",
+              "displayName": "cluster_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "cluster_name",
+              "displayName": "cluster_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1568,
+        96
+      ],
+      "id": "50bd7387-78f8-4453-82ff-f2f490575a46",
+      "name": "insertion des resultats dans google sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "U1gl8LSbJYVp7mdk",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://flask:5000/predict-cluster",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "final_price",
+              "value": "={{ $json.final_price }}"
+            },
+            {
+              "name": "price",
+              "value": "={{ $json.price }}"
+            },
+            {
+              "name": "budget",
+              "value": "={{ $json.budget }}"
+            },
+            {
+              "name": "rating",
+              "value": "={{ $json.rating }}"
+            },
+            {
+              "name": "visitors",
+              "value": "={{ $json.visitors }}"
+            },
+            {
+              "name": "complaint_status_bin",
+              "value": "={{ $json.complaint_status_bin }}"
+            },
+            {
+              "name": "complaint_subject_freq",
+              "value": "={{ $json.complaint_subject_freq }}"
+            },
+            {
+              "name": "event_type_Corporate Event",
+              "value": "={{ $json[\"event_type_Corporate Event\"] }}"
+            },
+            {
+              "name": "event_type_Private Party",
+              "value": "={{ $json[\"event_type_Private Party\"] }}"
+            },
+            {
+              "name": "event_type_Wedding",
+              "value": "={{ $json.event_type_Wedding }}"
+            },
+            {
+              "name": "reservation_status_cancelled",
+              "value": "={{ $json.reservation_status_cancelled }}"
+            },
+            {
+              "name": "reservation_status_confirmed",
+              "value": "={{ $json.reservation_status_confirmed }}"
+            },
+            {
+              "name": "reservation_status_pending",
+              "value": "={{ $json.reservation_status_pending }}"
+            },
+            {
+              "name": "algo",
+              "value": "kmeans"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        784,
+        144
+      ],
+      "id": "8213c361-aa7d-477e-bdf0-8ac81b7f1c24",
+      "name": "requete pour clustering",
+      "executeOnce": false,
+      "alwaysOutputData": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "01dce786-d89e-4001-807c-4d30b048f2a4",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "error",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1024,
+        64
+      ],
+      "id": "3da017a6-4696-4b9f-8c37-43a38c1fe511",
+      "name": "condition en cas d'erreur"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    f.sk_beneficiary,\n    f.price,\n    f.budget,\n    f.final_price,\n    f.rating,\n    f.visitors,\n    f.marketing_spend,\n    f.id_complaint,\n    e.type,\n    e.event_date\nFROM fact_suivi_event f\nLEFT JOIN dim_event e ON f.event_sk = e.event_sk",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        512,
+        608
+      ],
+      "id": "68b21562-62a0-4d0f-83ec-c5a623320122",
+      "name": "Chargement vue pour clustering1",
+      "credentials": {
+        "postgres": {
+          "id": "GuXQ4ZWVBc0pJBzP",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "seconds"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -48,
+        1136
+      ],
+      "id": "452358b8-0518-40d5-be17-29d5c1ff4836",
+      "name": "Periodic Inference"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://fastapi:8000/lab/train/price",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        144,
+        1136
+      ],
+      "id": "ec0116f1-5d04-45bf-aa88-d0da3c870dea",
+      "name": "Call ML API - Train Model",
+      "retryOnFail": false,
+      "alwaysOutputData": false,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://fastapi:8000/lab/predict/price",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"price\": {{$json[\"price\"]}},\n  \"budget\": {{$json[\"budget\"]}},\n  \"marketing_spend\": {{$json[\"marketing_spend\"]}},\n  \"new_beneficiaries\": {{$json[\"new_beneficiaries\"]}},\n  \"reservations\": {{$json[\"reservations\"]}},\n  \"nb_events\": {{$json[\"nb_events\"]}},\n  \"avg_spent_user\": {{$json[\"avg_spent_user\"]}},\n  \"type\": \"{{$json[\"type\"]}}\",\n  \"status\": \"{{$json[\"status\"]}}\"\n}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        656,
+        1024
+      ],
+      "id": "f3fa322f-4446-41a5-b1bb-302cf5caac88",
+      "name": "Call ML API - Predict Endpoint",
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    f.price,\n    f.budget,\n    f.marketing_spend,\n    f.new_beneficiaries,\n    f.reservations,\n    e.type::text as type,\n    r.status::text as status,\n\n    COUNT(f.event_sk) OVER (PARTITION BY f.sk_beneficiary) as nb_events,\n    AVG(f.final_price) OVER (PARTITION BY f.sk_beneficiary) as avg_spent_user\n\nFROM fact_suivi_event f\nLEFT JOIN dim_event e ON f.event_sk = e.event_sk\nLEFT JOIN dim_reservation r ON f.reservation_sk = r.reservation_sk\n\nORDER BY e.event_date DESC\n  LIMIT 1;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        448,
+        1008
+      ],
+      "id": "0a02ebab-a934-4ffe-9e89-f7a4d47fd41c",
+      "name": "Fetch Data from PostgreSQL",
+      "credentials": {
+        "postgres": {
+          "id": "GuXQ4ZWVBc0pJBzP",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "list",
+          "cachedResultName": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "predictions",
+          "mode": "list",
+          "cachedResultName": "predictions"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "price": "={{$node[\"Fetch Data from PostgreSQL\"].json[\"price\"]}}",
+            "budget": "={{$node[\"Fetch Data from PostgreSQL\"].json[\"budget\"]}}",
+            "marketing_spend": "={{$node[\"Fetch Data from PostgreSQL\"].json[\"marketing_spend\"]}}",
+            "new_beneficiaries": "={{$node[\"Fetch Data from PostgreSQL\"].json[\"new_beneficiaries\"]}}",
+            "reservations": "={{$node[\"Fetch Data from PostgreSQL\"].json[\"reservations\"]}}",
+            "status": "={{$node[\"Fetch Data from PostgreSQL\"].json[\"status\"]}}",
+            "created_at": "2026-04-25T13:51:57",
+            "event_type": "={{$node[\"Fetch Data from PostgreSQL\"].json[\"type\"]}}",
+            "predictions": "={{$node[\"Call ML API - Predict Endpoint\"].json[\"final_price\"]}}\n"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "price",
+              "displayName": "price",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "budget",
+              "displayName": "budget",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "marketing_spend",
+              "displayName": "marketing_spend",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "new_beneficiaries",
+              "displayName": "new_beneficiaries",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "reservations",
+              "displayName": "reservations",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "event_type",
+              "displayName": "event_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "predictions",
+              "displayName": "predictions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1040,
+        976
+      ],
+      "id": "787a0cdf-71fa-44f6-827a-b7f1f2397ee8",
+      "name": "Store Prediction Results",
+      "credentials": {
+        "postgres": {
+          "id": "GuXQ4ZWVBc0pJBzP",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "#alerts",
+          "mode": "name"
+        },
+        "text": "🚨 Erreur prediction !",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        1024,
+        1136
+      ],
+      "id": "62314d0b-43b3-4da8-99d5-14e620172f0a",
+      "name": "Prediction Error",
+      "webhookId": "f589b54a-cec4-476c-8bc1-4d3283541fac",
+      "credentials": {
+        "slackApi": {
+          "id": "fvxT0YN1uZFCzIk8",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "trabelsiemna779@gmail.com",
+        "toEmail": "Trabelsi.Emna.1@esprit.tn",
+        "subject": " Erreur Training ML",
+        "html": "=Le training a échoué <br><br>\n\nErreur : {{$json[\"error\"]}}<br><br>\n\nOutput : {{$json[\"output\"]}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        432,
+        1216
+      ],
+      "id": "d59979e2-61b8-4fd8-b602-3242ad5bf5bb",
+      "name": "Send Email Notification - Failure",
+      "webhookId": "f42fe482-b553-42a4-abc0-1f59ec61763c",
+      "credentials": {
+        "smtp": {
+          "id": "5aYqTyZEq34bMf5K",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 2
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -48,
+        608
+      ],
+      "id": "25c9286d-e73f-4c1d-b93a-127b7a454a22",
+      "name": "planification des predictions"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://fastapi:8000/lab/train/loyalty",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        224,
+        608
+      ],
+      "id": "3f790e9b-f5c5-40ab-8fd0-7bed07c7c3f5",
+      "name": "lancer entrainement ML",
+      "retryOnFail": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nfor (const item of $input.all()) {\n  item.json.myNewField = 1;\n}\nconst items = [];\n\nfor (const item of $input.all()) {\n  const price = item.json.price || 0;\n  const budget = item.json.budget || 0;\n  const final_price = item.json.final_price || 0;\n  \n  items.push({\n    json: {\n      price: price,\n      budget: budget,\n      final_price: final_price,\n      rating: item.json.rating || 0,\n      visitors: item.json.visitors || 0,\n      marketing_spend: item.json.marketing_spend || 0,\n      price_budget_ratio: price / (budget + 0.01),\n      margin: final_price - price,\n      has_complaint: item.json.id_complaint ? 1 : 0,\n      type_encoded: 0,\n      season_encoded: 0,\n      is_weekend: 0,\n      month: new Date(item.json.event_date).getMonth() + 1,\n      sk_beneficiary: item.json.sk_beneficiary\n    }\n  });\n}\n\nreturn items;\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        736,
+        608
+      ],
+      "id": "4d3b37a7-4f68-4824-8f09-cedd44af9853",
+      "name": "preparation modele pour ML"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://flask:5000/predict-loyalty",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"price\": {{ $json.price }},\n  \"budget\": {{ $json.budget }},\n  \"final_price\": {{ $json.final_price }},\n  \"rating\": {{ $json.rating }},\n  \"visitors\": {{ $json.visitors }},\n  \"marketing_spend\": {{ $json.marketing_spend }},\n  \"price_budget_ratio\": {{ $json.price_budget_ratio }},\n  \"margin\": {{ $json.margin }},\n  \"has_complaint\": {{ $json.has_complaint }},\n  \"type_encoded\": {{ $json.type_encoded }},\n  \"season_encoded\": {{ $json.season_encoded }},\n  \"is_weekend\": {{ $json.is_weekend }},\n  \"month\": {{ $json.month }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        928,
+        608
+      ],
+      "id": "60927aba-f8b1-4dcd-9fb5-0c97392aee1a",
+      "name": "Appel api prediction",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "jsCode": "return items[0].json.results.map(item => {\n  return { json: item };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        448
+      ],
+      "id": "9c86ff5e-eb8c-40cc-883b-4e2a00c6a42f",
+      "name": "Transformation resultat prediction"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "675fbdc3-3d5e-434b-a725-33b0b3aa6afe",
+              "name": "sk_beneficiary",
+              "value": "={{ $json.sk_beneficiary }}",
+              "type": "string"
+            },
+            {
+              "id": "8a488a12-a9de-4072-9f3e-77f0d23298ae",
+              "name": "label",
+              "value": "={{ $json.label }}",
+              "type": "string"
+            },
+            {
+              "id": "2694c24f-4ac6-4091-b4fa-1101eb87fa63",
+              "name": "probabilite",
+              "value": "={{ $json.probabilite_fidelite }}",
+              "type": "string"
+            },
+            {
+              "id": "fa0dab71-5c66-4b5e-b5e5-b18fe535a479",
+              "name": "action",
+              "value": "={{ $json.action_recommandee }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1216,
+        416
+      ],
+      "id": "41667c28-9f89-4cbc-b396-5d3b4e389caa",
+      "name": "formatage données pour export csv"
+    },
+    {
+      "parameters": {
+        "binaryPropertyName": "predictions_{{ $now.format('yyyy-MM-dd') }}.csv",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1488,
+        416
+      ],
+      "id": "661f073f-fc02-4d03-ad3f-337333a46ecf",
+      "name": "Génération fichier resultat"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9b69d91c-be79-4a16-ae6b-3cef8d10a021",
+              "leftValue": "={{ $json.label }}",
+              "rightValue": "Fidèle",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1120,
+        704
+      ],
+      "id": "326c6873-859a-45fe-a537-42c59d8e0faf",
+      "name": "If detection client à risque"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1360,
+        640
+      ],
+      "id": "39691c96-221c-4912-9cd2-cdbe5f3448df",
+      "name": "calcul clients fideles"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1344,
+        832
+      ],
+      "id": "4e6899c3-325d-4a7b-8f42-475e6b49acbd",
+      "name": "calcul nombre client à risque"
+    },
+    {
+      "parameters": {
+        "fromEmail": "hejermnejjaa@gmail.com",
+        "toEmail": "hejermnejjaa@gmail.com",
+        "subject": "=⚠️ Rapport fidélisation - {{ $now.format('dd/MM/yyyy') }}",
+        "emailFormat": "text",
+        "text": "=⚠️ Rapport fidélisation\n\nNombre de bénéficiaires fidèles détectés : {{ $json.data.length }}\n\n{{ $json.data.map(item => `- Bénéficiaire ${item.sk_beneficiary} | Proba: ${item.probabilite_fidelite} | Action: ${item.action_recommandee}`).join('\\n') }}\n\nEnvoyé automatiquement par n8n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1552,
+        656
+      ],
+      "id": "94233806-9d73-45c4-8d0d-4357f60e488a",
+      "name": "notification client fidele",
+      "webhookId": "5c5deb78-1d9a-4fd2-9827-cee01360da38",
+      "credentials": {
+        "smtp": {
+          "id": "5aYqTyZEq34bMf5K",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "hejermnejjaa@gmail.com",
+        "toEmail": "hejermnejjaa@gmail.com",
+        "subject": "=Offre spéciale rien que pour vous 🎁",
+        "emailFormat": "text",
+        "text": "=Bonjour,\n\nNous avons analysé votre activité et souhaitons vous proposer une expérience encore meilleure.\n\n💡 Recommandation :\n{{$json[\"data\"][0][\"action_recommandee\"]}}\n\n🎯 Probabilité de fidélité estimée :\n{{$json[\"data\"][0][\"probabilite_fidelite\"]}}\n\nNous vous invitons à profiter de nos nouvelles offres personnalisées.\n\nCordialement,  \nL’équipe EventZilla",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1600,
+        816
+      ],
+      "id": "6d697a91-dfce-49dc-bd73-a5c60b1e4f7a",
+      "name": "notification client à risque",
+      "webhookId": "5c5deb78-1d9a-4fd2-9827-cee01360da38",
+      "credentials": {
+        "smtp": {
+          "id": "5aYqTyZEq34bMf5K",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1376,
+        -288
+      ],
+      "id": "57ad8e1c-01eb-4550-9603-e909092d5234",
+      "name": "unifier les mails",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -224,
+        112
+      ],
+      "id": "443eed66-6b0c-4d54-a849-71f528e6ab9e",
+      "name": "planification clustering"
+    },
+    {
+      "parameters": {
+        "sendTo": "walid.fehri@esprit.tn",
+        "subject": "Error kmeans",
+        "message": "=<h3>Une erreur est survenue dans le modèle ML</h3> <p><strong>Détails :</strong> </p> <p><strong>Heure de l'incident :</strong> {{ $now }}</p> <p><strong>Statut renvoyé :</strong> {{ $json.status }}</p> <br> <p><i>Ceci est une alerte automatique envoyée par n8n.</i></p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1600,
+        -288
+      ],
+      "id": "776770e1-c5c5-47f7-983a-6db641c55468",
+      "name": "Mail en cas d'anomalie",
+      "webhookId": "693f3866-d3ad-41e2-815e-7b53b65f8016",
+      "executeOnce": false,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "omzzrA8o3PmkMEfD",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "walid.fehri@esprit.tn",
+        "subject": "Error dbscan",
+        "message": "=<h3>Une erreur est survenue dans le modèle ML</h3> <p><strong>Détails :</strong> </p> <p><strong>Heure de l'incident :</strong> {{ $now }}</p> <p><strong>Statut renvoyé :</strong> {{ $json.status }}</p> <br> <p><i>Ceci est une alerte automatique envoyée par n8n.</i></p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1648,
+        1648
+      ],
+      "id": "9bb064d0-0f00-47ce-816e-97bad8db9b09",
+      "name": "Send a message",
+      "webhookId": "693f3866-d3ad-41e2-815e-7b53b65f8016",
+      "executeOnce": false,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "omzzrA8o3PmkMEfD",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1424,
+        1648
+      ],
+      "id": "6210cdfd-07a1-47d3-9bcc-856e094bc64b",
+      "name": "Aggregate",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM view_event_analysis ;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        224,
+        1552
+      ],
+      "id": "bfa172dc-0d1c-47aa-8b4e-a8792f1fbf1f",
+      "name": "Chargement vue pour clustering2",
+      "credentials": {
+        "postgres": {
+          "id": "GuXQ4ZWVBc0pJBzP",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "batchSize": 120,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        432,
+        1552
+      ],
+      "id": "1d7b5be5-ec39-4a4c-b9b4-6ac60f8369b5",
+      "name": "parcourir les lignes par ",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1Z3fzBE0LdsjUzOVOpZer0R6xpiSaslvybFf_WgdZ9ro",
+          "mode": "list",
+          "cachedResultName": "Feuille de calcul sans titre",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Z3fzBE0LdsjUzOVOpZer0R6xpiSaslvybFf_WgdZ9ro/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "dbscan",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Z3fzBE0LdsjUzOVOpZer0R6xpiSaslvybFf_WgdZ9ro/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "algorithm\n": "={{$json.algorithm}}",
+            "cluster_id": "={{$json.cluster_id}}",
+            "status": "={{$json.status}}",
+            "cluster_name": "={{$json.cluster_name}}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "algorithm\n",
+              "displayName": "algorithm\n",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "cluster_id",
+              "displayName": "cluster_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "cluster_name",
+              "displayName": "cluster_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1136,
+        1680
+      ],
+      "id": "94bd396d-79a0-41fa-bb1d-82773603e857",
+      "name": "insertion des resultats dans google sheets1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "U1gl8LSbJYVp7mdk",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://flask:5000/predict-cluster",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "final_price",
+              "value": "={{ $json.final_price }}"
+            },
+            {
+              "name": "price",
+              "value": "={{ $json.price }}"
+            },
+            {
+              "name": "budget",
+              "value": "={{ $json.budget }}"
+            },
+            {
+              "name": "rating",
+              "value": "={{ $json.rating }}"
+            },
+            {
+              "name": "visitors",
+              "value": "={{ $json.visitors }}"
+            },
+            {
+              "name": "complaint_status_bin",
+              "value": "={{ $json.complaint_status_bin }}"
+            },
+            {
+              "name": "complaint_subject_freq",
+              "value": "={{ $json.complaint_subject_freq }}"
+            },
+            {
+              "name": "event_type_Corporate Event",
+              "value": "={{ $json[\"event_type_Corporate Event\"] }}"
+            },
+            {
+              "name": "event_type_Private Party",
+              "value": "={{ $json[\"event_type_Private Party\"] }}"
+            },
+            {
+              "name": "event_type_Wedding",
+              "value": "={{ $json.event_type_Wedding }}"
+            },
+            {
+              "name": "reservation_status_cancelled",
+              "value": "={{ $json.reservation_status_cancelled }}"
+            },
+            {
+              "name": "reservation_status_confirmed",
+              "value": "={{ $json.reservation_status_confirmed }}"
+            },
+            {
+              "name": "reservation_status_pending",
+              "value": "={{ $json.reservation_status_pending }}"
+            },
+            {
+              "name": "algo",
+              "value": "dbscan"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        736,
+        1568
+      ],
+      "id": "afae5e0e-7436-4af8-83bd-437264ac7ace",
+      "name": "requete pour clustering1",
+      "executeOnce": false,
+      "alwaysOutputData": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "01dce786-d89e-4001-807c-4d30b048f2a4",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "error",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        992,
+        1536
+      ],
+      "id": "9e38dd04-a1cf-4403-9bf8-8398163bc239",
+      "name": "condition en cas d'erreur1"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 2
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -224,
+        1536
+      ],
+      "id": "fac4f27f-af51-4d0d-bff9-297e341fed43",
+      "name": "Planification dbscan"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://flask:5000/train-models",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"action\": \"start_training\",\n  \"reason\": \"Scheduled update from n8n\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -32,
+        144
+      ],
+      "id": "fba73604-e5fd-43b9-91cf-f562b8011172",
+      "name": "entrainement du modele"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://flask:5000/train-models",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"action\": \"start_training\",\n  \"reason\": \"Scheduled update from n8n\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        16,
+        1552
+      ],
+      "id": "0377a089-495e-4e6e-8452-b5f8c4e9f7ad",
+      "name": "entrainement du modele1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Replace Me": {
+      "main": [
+        []
+      ]
+    },
+    "Chargement vue pour clustering": {
+      "main": [
+        [
+          {
+            "node": "parcourir les lignes par 50",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "parcourir les lignes par 50": {
+      "main": [
+        [],
+        [
+          {
+            "node": "requete pour clustering",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "requete pour clustering": {
+      "main": [
+        [
+          {
+            "node": "parcourir les lignes par 50",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "condition en cas d'erreur",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "condition en cas d'erreur": {
+      "main": [
+        [
+          {
+            "node": "unifier les mails",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "insertion des resultats dans google sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chargement vue pour clustering1": {
+      "main": [
+        [
+          {
+            "node": "preparation modele pour ML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "insertion des resultats dans google sheets": {
+      "main": [
+        []
+      ]
+    },
+    "Periodic Inference": {
+      "main": [
+        [
+          {
+            "node": "Call ML API - Train Model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call ML API - Train Model": {
+      "main": [
+        [
+          {
+            "node": "Fetch Data from PostgreSQL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Email Notification - Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call ML API - Predict Endpoint": {
+      "main": [
+        [
+          {
+            "node": "Store Prediction Results",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prediction Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Data from PostgreSQL": {
+      "main": [
+        [
+          {
+            "node": "Call ML API - Predict Endpoint",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "planification des predictions": {
+      "main": [
+        [
+          {
+            "node": "lancer entrainement ML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "lancer entrainement ML": {
+      "main": [
+        [
+          {
+            "node": "Chargement vue pour clustering1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "preparation modele pour ML": {
+      "main": [
+        [
+          {
+            "node": "Appel api prediction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Appel api prediction": {
+      "main": [
+        [
+          {
+            "node": "Transformation resultat prediction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transformation resultat prediction": {
+      "main": [
+        [
+          {
+            "node": "formatage données pour export csv",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "formatage données pour export csv": {
+      "main": [
+        [
+          {
+            "node": "If detection client à risque",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Génération fichier resultat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If detection client à risque": {
+      "main": [
+        [
+          {
+            "node": "calcul clients fideles",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "calcul nombre client à risque",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "calcul clients fideles": {
+      "main": [
+        [
+          {
+            "node": "notification client fidele",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "calcul nombre client à risque": {
+      "main": [
+        [
+          {
+            "node": "notification client à risque",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "unifier les mails": {
+      "main": [
+        [
+          {
+            "node": "Mail en cas d'anomalie",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "planification clustering": {
+      "main": [
+        [
+          {
+            "node": "entrainement du modele",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chargement vue pour clustering2": {
+      "main": [
+        [
+          {
+            "node": "parcourir les lignes par ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "parcourir les lignes par ": {
+      "main": [
+        [],
+        [
+          {
+            "node": "requete pour clustering1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "requete pour clustering1": {
+      "main": [
+        [
+          {
+            "node": "parcourir les lignes par ",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "condition en cas d'erreur1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "condition en cas d'erreur1": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "insertion des resultats dans google sheets1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Planification dbscan": {
+      "main": [
+        [
+          {
+            "node": "entrainement du modele1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "entrainement du modele": {
+      "main": [
+        [
+          {
+            "node": "Chargement vue pour clustering",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "entrainement du modele1": {
+      "main": [
+        [
+          {
+            "node": "Chargement vue pour clustering2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "0dfc10ec-4091-478e-9d0f-1f3983eb06d9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "bc3bab3ad9b58b00f6cad516781d5f6ef15253be9ff48c06780b59703cbddafb"
+  },
+  "id": "YZgFxgtkX8GfltE5",
+  "tags": []
+}

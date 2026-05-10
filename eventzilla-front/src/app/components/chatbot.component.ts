@@ -1,6 +1,6 @@
 import {
   Component, signal, inject, computed, ViewChild, ElementRef,
-  AfterViewChecked, OnDestroy
+  AfterViewChecked, OnDestroy, effect
 } from '@angular/core';
 import {
   Chart, BarController, BarElement, CategoryScale, LinearScale,
@@ -38,11 +38,12 @@ interface Message {
 export class ChatbotComponent implements AfterViewChecked, OnDestroy {
   @ViewChild('msgEnd') private msgEnd!: ElementRef;
   private readonly api  = inject(ApiService);
-  private readonly auth = inject(AuthService);
+  protected readonly auth = inject(AuthService);
   private charts = new Map<string, Chart>();
 
   open     = signal(false);
   input    = signal('');
+  private sessionKey = '';
 
   private get roleConfig() {
     const role = this.auth.role();
@@ -56,9 +57,27 @@ export class ChatbotComponent implements AfterViewChecked, OnDestroy {
     { role: 'bot', text: "Hi! I'm the EventZella AI Assistant. Ask me anything about your events data." }
   ]);
 
+  constructor() {
+    effect(() => {
+      const nextSessionKey = `${this.auth.isLoggedIn()}|${this.auth.userEmail()}|${this.auth.role()}`;
+      if (nextSessionKey === this.sessionKey) return;
+      this.sessionKey = nextSessionKey;
+      queueMicrotask(() => this.resetConversation());
+    });
+  }
+
   toggle(): void { this.open.update(v => !v); }
   tableKeys(row: Record<string, unknown>): string[] { return Object.keys(row); }
   ask(q: string): void { this.input.set(q); this.send(); }
+
+  private resetConversation(): void {
+    this.charts.forEach(c => c.destroy());
+    this.charts.clear();
+    this.input.set('');
+    this.messages.set([
+      { role: 'bot', text: "Hi! I'm the EventZella AI Assistant. Ask me anything about your events data." }
+    ]);
+  }
 
   send(): void {
     const text = this.input().trim();
