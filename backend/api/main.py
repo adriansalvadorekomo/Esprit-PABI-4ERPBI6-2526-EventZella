@@ -1142,3 +1142,66 @@ def chatbot(body: ChatRequest, request: Request):
 
     return {"reply": reply, "sql": sql, "data": data, "type": q_type,
             "chart_type": chart_type, "status": "success"}
+
+
+# ── n8n Alerts ──────────────────────────────────────────────
+from eventzilla_api.db import get_engine as _get_alerts_engine
+from pydantic import BaseModel as PydanticBase
+
+class AlertCreate(PydanticBase):
+    pipeline: str
+    severity: str = "error"
+    title: str
+    message: str
+    details: dict = {}
+
+
+@app.post("/alerts")
+def create_alert(alert: AlertCreate) -> dict:
+    engine = _get_alerts_engine()
+    with engine.connect() as conn:
+        conn.execute(
+            text("""
+                INSERT INTO n8n_alerts (pipeline, severity, title, message, details)
+                VALUES (:p, :s, :t, :m, CAST(:d AS jsonb))
+            """),
+            {"p": alert.pipeline, "s": alert.severity, "t": alert.title,
+             "m": alert.message, "d": json.dumps(alert.details)},
+        )
+        conn.commit()
+    return {"status": "success"}
+
+
+@app.get("/alerts")
+def get_alerts(limit: int = 50) -> list[dict]:
+    engine = _get_alerts_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(
+            text("""
+                SELECT id, pipeline, severity, title, message, details, created_at, is_read
+                FROM n8n_alerts ORDER BY created_at DESC LIMIT :lim
+            """),
+            {"lim": limit},
+        ).fetchall()
+    return [
+        {"id": r[0], "pipeline": r[1], "severity": r[2], "title": r[3],
+         "message": r[4], "details": r[5], "created_at": str(r[6]), "is_read": r[7]}
+        for r in rows
+    ]
+
+
+@app.post("/alerts/{alert_id}/read")
+def mark_alert_read(alert_id: int) -> dict:
+    engine = _get_alerts_engine()
+    with engine.connect() as conn:
+        conn.execute(text("UPDATE n8n_alerts SET is_read = TRUE WHERE id = :id"), {"id": alert_id})
+        conn.commit()
+    return {"status": "success"}
+
+
+@app.get("/alerts/unread-count")
+def unread_alert_count() -> dict:
+    engine = _get_alerts_engine()
+    with engine.connect() as conn:
+        count = conn.execute(text("SELECT COUNT(*) FROM n8n_alerts WHERE is_read = FALSE")).scalar()
+    return {"unread_count": count}

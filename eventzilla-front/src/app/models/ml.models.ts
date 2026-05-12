@@ -164,6 +164,17 @@ export interface ClusterRequest {
   algo?: 'kmeans' | 'dbscan';
 }
 
+export interface N8nAlert {
+  id: number;
+  pipeline: string;
+  severity: string;
+  title: string;
+  message: string;
+  details: Record<string, unknown>;
+  created_at: string;
+  is_read: boolean;
+}
+
 export interface ClusterResponse {
   cluster_id: number;
   cluster_name: string;

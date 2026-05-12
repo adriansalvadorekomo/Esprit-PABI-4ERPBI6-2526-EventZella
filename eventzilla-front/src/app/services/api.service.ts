@@ -10,7 +10,8 @@ import {
   SentimentResponse,
   RecommendationResponse,
   AnomalyResponse,
-  DeepLearningResponse
+  DeepLearningResponse,
+  N8nAlert
 } from '../models/ml.models';
 
 export interface ChatResponse {
@@ -97,5 +98,18 @@ export class ApiService {
 
   predictCluster(data: ClusterRequest): Observable<ClusterResponse> {
     return this.http.post<ClusterResponse>(`${this.flask}/predict-cluster`, data);
+  }
+
+  // ── n8n Alerts ───────────────────────────────────────────
+  getAlerts(limit: number = 50): Observable<N8nAlert[]> {
+    return this.http.get<N8nAlert[]>(`${this.fastapi}/alerts?limit=${limit}`);
+  }
+
+  markAlertRead(alertId: number): Observable<{status: string}> {
+    return this.http.post<{status: string}>(`${this.fastapi}/alerts/${alertId}/read`, {});
+  }
+
+  getUnreadAlertCount(): Observable<{unread_count: number}> {
+    return this.http.get<{unread_count: number}>(`${this.fastapi}/alerts/unread-count`);
   }
 }
