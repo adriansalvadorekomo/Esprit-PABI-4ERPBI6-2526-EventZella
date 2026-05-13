@@ -22,6 +22,7 @@ import { FooterComponent } from './components/footer.component';
 import { HomeComponent } from './pages/home.component';
 import { ChatbotComponent } from './components/chatbot.component';
 import { ForecastChartComponent } from './components/forecast-chart.component';
+import { ClusterChartComponent } from './components/cluster-chart.component';
 import { NgrokInterceptor } from './services/ngrok.interceptor';
 
 @NgModule({
@@ -32,7 +33,8 @@ import { NgrokInterceptor } from './services/ngrok.interceptor';
     FooterComponent,
     HomeComponent,
     ChatbotComponent,
-    ForecastChartComponent
+    ForecastChartComponent,
+    ClusterChartComponent
   ],
   imports: [
     BrowserModule,
