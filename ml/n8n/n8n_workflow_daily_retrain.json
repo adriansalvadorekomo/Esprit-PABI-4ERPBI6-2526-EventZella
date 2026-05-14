@@ -1,0 +1,146 @@
+{
+  "name": "EventZilla Daily Retrain + Auto-Promote",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{"field": "hours", "hoursInterval": 24}]
+        }
+      },
+      "name": "Daily Cron (24h)",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [450, 100]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://fastapi:8000/train/price",
+        "options": {}
+      },
+      "name": "Train Price",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [250, 300],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://fastapi:8000/train/forecast",
+        "options": {}
+      },
+      "name": "Train Holt-Winters",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 300],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://fastapi:8000/lab/train/sarima",
+        "options": {}
+      },
+      "name": "Train SARIMA",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [650, 300],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://fastapi:8000/lab/train/prophet",
+        "options": {}
+      },
+      "name": "Train Prophet",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [850, 300],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://fastapi:8000/lab/train/lstm",
+        "options": {}
+      },
+      "name": "Train MLP (LSTM proxy)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1050, 300],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://fastapi:8000/train/deep-learning",
+        "options": {}
+      },
+      "name": "Train Deep Learning Loyalty",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1250, 300],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://fastapi:8000/lab/train/compare",
+        "options": {}
+      },
+      "name": "Compare All Models",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 550],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://fastapi:8000/metrics/pipeline",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"pipeline\": \"daily_retrain\",\n  \"status\": \"success\"\n}",
+        "options": {}
+      },
+      "name": "Report Success to Prometheus",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 750]
+    }
+  ],
+  "connections": {
+    "Daily Cron (24h)": {
+      "main": [[{"node": "Train Price", "type": "main", "index": 0}]]
+    },
+    "Train Price": {
+      "main": [
+        [{"node": "Train Holt-Winters", "type": "main", "index": 0}],
+        [{"node": "Compare All Models", "type": "main", "index": 1}]
+      ]
+    },
+    "Train Holt-Winters": {
+      "main": [[{"node": "Train SARIMA", "type": "main", "index": 0}]]
+    },
+    "Train SARIMA": {
+      "main": [[{"node": "Train Prophet", "type": "main", "index": 0}]]
+    },
+    "Train Prophet": {
+      "main": [[{"node": "Train MLP (LSTM proxy)", "type": "main", "index": 0}]]
+    },
+    "Train MLP (LSTM proxy)": {
+      "main": [[{"node": "Train Deep Learning Loyalty", "type": "main", "index": 0}]]
+    },
+    "Train Deep Learning Loyalty": {
+      "main": [[{"node": "Compare All Models", "type": "main", "index": 0}]]
+    },
+    "Compare All Models": {
+      "main": [[{"node": "Report Success to Prometheus", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": {},
+  "versionId": "1",
+  "triggerCount": 1
+}

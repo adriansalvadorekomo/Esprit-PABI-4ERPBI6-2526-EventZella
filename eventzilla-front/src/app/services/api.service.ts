@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
   PricePredictRequest, PricePredictResponse,
@@ -10,7 +10,8 @@ import {
   SentimentResponse,
   RecommendationResponse,
   AnomalyResponse,
-  DeepLearningResponse
+  DeepLearningResponse,
+  N8nAlert
 } from '../models/ml.models';
 
 export interface ChatResponse {
@@ -27,8 +28,8 @@ interface AppConfig { fastapiUrl: string; flaskUrl: string; }
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private readonly http = inject(HttpClient);
-  private fastapi = 'http://localhost:8000';
-  private flask   = 'http://localhost:5000';
+  private fastapi = '/api';
+  private flask   = '/bi';
 
   constructor() {
     this.http.get<AppConfig>('/config.json').subscribe(cfg => {
@@ -55,8 +56,14 @@ export class ApiService {
     return this.http.post(`${this.fastapi}/train/fidelisation`, {});
   }
 
-  chatbot(message: string): Observable<ChatResponse> {
-    return this.http.post<ChatResponse>(`${this.fastapi}/chatbot`, { message });
+
+  getRevenueForecast(horizon: number = 6): Observable<{status: string; model: string; history: {date: string; value: number}[]; forecast: {date: string; value: number}[]}> {
+    return this.http.get<{status: string; model: string; history: {date: string; value: number}[]; forecast: {date: string; value: number}[]}>(`${this.fastapi}/predict/revenue-forecast?horizon=${horizon}`);
+  }
+
+  chatbot(message: string, role: string = ''): Observable<ChatResponse> {
+    const headers = new HttpHeaders({ 'X-User-Role': role });
+    return this.http.post<ChatResponse>(`${this.fastapi}/chatbot`, { message }, { headers });
   }
 
   getCategories(): Observable<string[]> {
@@ -91,5 +98,18 @@ export class ApiService {
 
   predictCluster(data: ClusterRequest): Observable<ClusterResponse> {
     return this.http.post<ClusterResponse>(`${this.flask}/predict-cluster`, data);
+  }
+
+  // ── n8n Alerts ───────────────────────────────────────────
+  getAlerts(limit: number = 50): Observable<N8nAlert[]> {
+    return this.http.get<N8nAlert[]>(`${this.fastapi}/alerts?limit=${limit}`);
+  }
+
+  markAlertRead(alertId: number): Observable<{status: string}> {
+    return this.http.post<{status: string}>(`${this.fastapi}/alerts/${alertId}/read`, {});
+  }
+
+  getUnreadAlertCount(): Observable<{unread_count: number}> {
+    return this.http.get<{unread_count: number}>(`${this.fastapi}/alerts/unread-count`);
   }
 }

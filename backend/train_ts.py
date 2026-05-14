@@ -20,10 +20,8 @@ mlflow.autolog(disable=True)
 mlflow.statsmodels.autolog(disable=True)
 
 # ─── DB ─────────────────────────────────────────
-conn = psycopg2.connect(
-    dbname="DW_event", user="postgres", password="1400",
-    host="localhost", port="5432"
-)
+from settings import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
+conn = psycopg2.connect(dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD, host=DB_HOST, port=DB_PORT)
 query = """
 SELECT e.event_date, f.final_price
 FROM fact_suivi_event f
@@ -166,7 +164,7 @@ future_index = pd.date_range(ts.index[-1] + pd.DateOffset(months=1),
                               periods=horizon, freq="MS")
 forecast_df = pd.DataFrame({"ds": future_index, "yhat": future_orig})
 
-forecast_path = "models/ts_forecast.csv"
+forecast_path = "models/sarima_forecast.csv"
 forecast_df.to_csv(forecast_path, index=False)
 print("\nForecast next 6 months:")
 print(forecast_df.to_string(index=False))

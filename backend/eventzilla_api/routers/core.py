@@ -1,6 +1,9 @@
+from datetime import datetime
 from functools import lru_cache
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
+from pydantic import BaseModel
+from sqlalchemy import text
 import pandas as pd
 
 from ..schemas.ml import InputFidelisation, InputForecast, InputSentiment, PricePredictRequest
@@ -25,11 +28,40 @@ def home() -> dict:
     }
 
 
-GROQ_API_KEY = __import__("os").getenv("GROQ_API_KEY", "")
+# ── Role-based chatbot enforcement ───────────────────────────
+_ROLE_TOPICS: dict[str, list[str]] = {
+    "marketing":   ["customer loyalty","client feedback","personalized event","customer segmentation",
+                    "campaign","visitor engagement","marketing kpi","retention","satisfaction",
+                    "engagement","recommendation","sentiment","channel","beneficiar"],
+    "quality":     ["client satisfaction","service quality","return likelihood","feedback",
+                    "unusual activity","complaint","quality kpi","rating","review",
+                    "negative","provider quality","satisfaction trend"],
+    "operational": ["booking demand","event profile","operational","planning","traffic",
+                    "unusual activity","reservation","anomaly","forecast","season",
+                    "busiest","visitor flow","overload","peak"],
+    "business":    ["pricing","revenue","profitability","business kpi","strategic",
+                    "financial","provider performance","profit","income","earnings",
+                    "cost","budget","price","quarter","forecast revenue"],
+}
+_DENIED_REPLY = "You do not have access to this topic. Please contact the administrator."
+
+def _role_allowed(role: str, question: str) -> bool:
+    if role == "admin" or not role:
+        return True
+    topics = _ROLE_TOPICS.get(role, [])
+    q = question.lower()
+    allowed = any(t in q for t in topics)
+    if not allowed:
+        print(f"[CHATBOT] DENIED role={role!r} question={question!r}")
+    return allowed
+
+
 
 
 def _ask_groq(message: str, db_context: str) -> str:
     import requests as _req
+    import settings as _s
+    GROQ_API_KEY = _s.GROQ_API_KEY
     system_prompt = (
         "You are EventZella AI, a Business Intelligence Copilot for an event management company.\n"
         "Analyze the data and provide clear insights, anomaly detection, and actionable recommendations.\n"
@@ -50,14 +82,23 @@ def _ask_groq(message: str, db_context: str) -> str:
             },
             timeout=30,
         )
-        return resp.json()["choices"][0]["message"]["content"]
+        data = resp.json()
+        if "choices" not in data:
+            return "AI error: " + data.get("error", {}).get("message", str(data))
+        return data["choices"][0]["message"]["content"]
     except Exception as exc:
         return f"AI error: {exc}"
 
 
 @router.post("/chatbot")
-def chatbot(body: dict) -> dict:
+def chatbot(body: dict, request: Request) -> dict:
+    role = (request.headers.get("X-User-Role") or "").strip().lower()
     message = (body.get("message") or "").strip()
+
+    if not _role_allowed(role, message):
+        return {"reply": _DENIED_REPLY, "sql": None, "data": [],
+                "type": "general", "chart_type": None, "status": "denied"}
+
     engine  = get_engine()
 
     # Fetch live KPI context
@@ -196,4 +237,160 @@ def predict_forecast(data: InputForecast):
 @router.post("/predict/sentiment")
 def predict_sentiment(data: InputSentiment):
     return get_service().predict_sentiment(data)
+
+
+@router.get("/predict/revenue-forecast")
+def revenue_forecast(horizon: int = 6) -> dict:
+    import numpy as np
+    import pandas as pd
+    from fastapi import HTTPException
+
+    if horizon not in (4, 6, 12):
+        horizon = 6
+
+    # ── Load historical revenue from DB ──────────────────────
+    try:
+        engine = get_engine()
+        df = pd.read_sql(
+            """SELECT e.event_date, f.final_price
+               FROM fact_suivi_event f
+               LEFT JOIN dim_event e ON f.event_sk = e.event_sk
+               WHERE e.event_date IS NOT NULL AND f.final_price IS NOT NULL""",
+            engine,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Database unavailable: {exc}")
+
+    if df.empty:
+        raise HTTPException(status_code=404, detail="No revenue data found in the database.")
+
+    df["event_date"] = pd.to_datetime(df["event_date"], errors="coerce")
+    df = df.dropna(subset=["event_date"])
+
+    ts = (
+        df.set_index("event_date")["final_price"]
+        .resample("MS").sum()
+        .replace(0, np.nan)
+        .interpolate(method="time")
+        .ffill().bfill()
+    )
+
+    if len(ts) < 3:
+        raise HTTPException(status_code=422, detail="Not enough historical data to forecast.")
+
+    # ── Fit Holt's linear trend (robust for short series) ────
+    from statsmodels.tsa.holtwinters import ExponentialSmoothing
+    try:
+        model = ExponentialSmoothing(ts, trend="add", seasonal=None, initialization_method="estimated")
+        fit = model.fit(optimized=True, remove_bias=True)
+        raw = fit.forecast(horizon)
+    except Exception:
+        # Fallback: simple linear extrapolation
+        x = np.arange(len(ts))
+        slope, intercept = np.polyfit(x, ts.values, 1)
+        future_x = np.arange(len(ts), len(ts) + horizon)
+        raw = pd.Series(intercept + slope * future_x)
+
+    values = np.maximum(raw.values, 0)
+    start = ts.index[-1] + pd.DateOffset(months=1)
+    dates = pd.date_range(start, periods=horizon, freq="MS")
+
+    history = [
+        {"date": idx.strftime("%Y-%m-%d"), "value": round(float(v), 2)}
+        for idx, v in ts.tail(12).items()
+    ]
+    rows = [{"date": d.strftime("%Y-%m-%d"), "value": round(float(v), 2)}
+            for d, v in zip(dates, values)]
+
+    return {"status": "success", "model": "Revenue Forecast", "history": history, "forecast": rows}
+
+
+# ── n8n Alerts ──────────────────────────────────────────────
+class AlertCreate(BaseModel):
+    pipeline: str
+    severity: str = "error"
+    title: str
+    message: str
+    details: dict = {}
+
+
+@router.post("/alerts")
+def create_alert(alert: AlertCreate) -> dict:
+    import json
+
+    from ..db import get_engine
+
+    engine = get_engine()
+    with engine.connect() as conn:
+        conn.execute(
+            text("""
+                INSERT INTO n8n_alerts (pipeline, severity, title, message, details)
+                VALUES (:pipeline, :severity, :title, :message, :details::jsonb)
+            """),
+            {
+                "pipeline": alert.pipeline,
+                "severity": alert.severity,
+                "title": alert.title,
+                "message": alert.message,
+                "details": json.dumps(alert.details),
+            },
+        )
+        conn.commit()
+    return {"status": "success"}
+
+
+@router.get("/alerts")
+def get_alerts(limit: int = 50) -> list[dict]:
+    from ..db import get_engine
+
+    engine = get_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(
+            text("""
+                SELECT id, pipeline, severity, title, message, details, created_at, is_read
+                FROM n8n_alerts
+                ORDER BY created_at DESC
+                LIMIT :limit
+            """),
+            {"limit": limit},
+        ).fetchall()
+    return [
+        {
+            "id": r[0],
+            "pipeline": r[1],
+            "severity": r[2],
+            "title": r[3],
+            "message": r[4],
+            "details": r[5],
+            "created_at": str(r[6]),
+            "is_read": r[7],
+        }
+        for r in rows
+    ]
+
+
+@router.post("/alerts/{alert_id}/read")
+def mark_alert_read(alert_id: int) -> dict:
+    from ..db import get_engine
+
+    engine = get_engine()
+    with engine.connect() as conn:
+        conn.execute(
+            text("UPDATE n8n_alerts SET is_read = TRUE WHERE id = :id"),
+            {"id": alert_id},
+        )
+        conn.commit()
+    return {"status": "success"}
+
+
+@router.get("/alerts/unread-count")
+def unread_alert_count() -> dict:
+    from ..db import get_engine
+
+    engine = get_engine()
+    with engine.connect() as conn:
+        count = conn.execute(
+            text("SELECT COUNT(*) FROM n8n_alerts WHERE is_read = FALSE")
+        ).scalar()
+    return {"unread_count": count}
 

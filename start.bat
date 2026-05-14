@@ -3,7 +3,7 @@ setlocal enabledelayedexpansion
 
 echo [1/4] Starting Docker containers...
 cd /d "%~dp0"
-docker compose up -d
+docker compose up -d --build
 if errorlevel 1 ( echo Docker failed & pause & exit /b 1 )
 
 echo [2/4] Starting ngrok tunnels...
@@ -19,7 +19,7 @@ if errorlevel 1 (
 
 echo [3/4] Fetching ngrok tunnel URLs...
 :fetch_urls
-for /f "tokens=*" %%u in ('powershell -NoProfile -Command "$t=(Invoke-RestMethod http://127.0.0.1:4040/api/tunnels).tunnels; $fa=($t|?{$_.config.addr -like '*8000*'}).public_url; $fl=($t|?{$_.config.addr -like '*5000*'}).public_url; $fe=($t|?{$_.config.addr -like '*4200*'}).public_url; if($fa -and $fl -and $fe){Write-Output \"$fa|$fl|$fe\"}else{Write-Output ''}"') do set URLS=%%u
+for /f "tokens=*" %%u in ('powershell -NoProfile -Command "$t=(Invoke-RestMethod http://127.0.0.1:4040/api/tunnels).tunnels; $fa=($t|?{$_.config.addr -like '*8000*'}).public_url; $fe=($t|?{$_.config.addr -like '*4200*'}).public_url; $n8=($t|?{$_.config.addr -like '*5678*'}).public_url; if($fa -and $fe -and $n8){Write-Output \"$fa|$fe|$n8\"}else{Write-Output ''}"') do set URLS=%%u
 
 if "!URLS!"=="" (
     timeout /t 2 /nobreak >nul
@@ -28,13 +28,15 @@ if "!URLS!"=="" (
 
 for /f "tokens=1,2,3 delims=|" %%a in ("!URLS!") do (
     set FASTAPI_URL=%%a
-    set FLASK_URL=%%b
-    set FRONTEND_URL=%%c
+    set FRONTEND_URL=%%b
+    set N8N_URL=%%c
+    set FLASK_URL=%%a
 )
 
 echo FastAPI  : !FASTAPI_URL!
-echo Flask    : !FLASK_URL!
 echo Frontend : !FRONTEND_URL!
+echo n8n      : !N8N_URL!
+echo Flask (Proxy): !FLASK_URL!
 
 echo [4/4] Updating config.json...
 powershell -NoProfile -Command "Set-Content -Path 'eventzilla-front\public\config.json' -Value ('{\"fastapiUrl\":\"!FASTAPI_URL!\",\"flaskUrl\":\"!FLASK_URL!\"}')"

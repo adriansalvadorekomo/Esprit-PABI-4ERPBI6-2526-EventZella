@@ -17,3 +17,7 @@ statsmodels
 pmdarima
 scipy
 matplotlib
+python-dotenv
+groq
+prometheus-fastapi-instrumentator
+prophet
