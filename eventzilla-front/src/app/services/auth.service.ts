@@ -12,9 +12,21 @@ const PASSWORD = '12345678';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  readonly isLoggedIn = signal(localStorage.getItem('eventzilla_logged_in') === 'true');
-  readonly userEmail  = signal(localStorage.getItem('eventzilla_user_email') ?? '');
-  readonly role       = signal(localStorage.getItem('eventzilla_role') ?? '');
+  private readonly storedEmail = (sessionStorage.getItem('eventzilla_user_email') ?? '').toLowerCase();
+  private readonly storedRole = sessionStorage.getItem('eventzilla_role') ?? '';
+  private readonly hasValidStoredSession =
+    sessionStorage.getItem('eventzilla_logged_in') === 'true' &&
+    ROLE_BY_EMAIL[this.storedEmail] === this.storedRole;
+
+  readonly isLoggedIn = signal(this.hasValidStoredSession);
+  readonly userEmail  = signal(this.hasValidStoredSession ? this.storedEmail : '');
+  readonly role       = signal(this.hasValidStoredSession ? this.storedRole : '');
+
+  constructor() {
+    if (!this.hasValidStoredSession) {
+      this.clearStoredSession();
+    }
+  }
 
   /** Kept for backward-compat (header shows email as badge) */
   get userName() { return this.userEmail; }
@@ -26,9 +38,10 @@ export class AuthService {
     if (!role || password !== PASSWORD) {
       return 'Invalid email or password.';
     }
-    localStorage.setItem('eventzilla_logged_in', 'true');
-    localStorage.setItem('eventzilla_user_email', normalised);
-    localStorage.setItem('eventzilla_role', role);
+    this.clearStoredSession();
+    sessionStorage.setItem('eventzilla_logged_in', 'true');
+    sessionStorage.setItem('eventzilla_user_email', normalised);
+    sessionStorage.setItem('eventzilla_role', role);
     this.isLoggedIn.set(true);
     this.userEmail.set(normalised);
     this.role.set(role);
@@ -36,12 +49,19 @@ export class AuthService {
   }
 
   signOut(): void {
-    localStorage.removeItem('eventzilla_logged_in');
-    localStorage.removeItem('eventzilla_user_email');
-    localStorage.removeItem('eventzilla_role');
+    this.clearStoredSession();
     this.isLoggedIn.set(false);
     this.userEmail.set('');
     this.role.set('');
+  }
+
+  private clearStoredSession(): void {
+    sessionStorage.removeItem('eventzilla_logged_in');
+    sessionStorage.removeItem('eventzilla_user_email');
+    sessionStorage.removeItem('eventzilla_role');
+    localStorage.removeItem('eventzilla_logged_in');
+    localStorage.removeItem('eventzilla_user_email');
+    localStorage.removeItem('eventzilla_role');
   }
 
   get isAdmin(): boolean { return this.role() === 'admin'; }

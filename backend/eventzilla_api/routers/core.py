@@ -1,6 +1,9 @@
+from datetime import datetime
 from functools import lru_cache
 
 from fastapi import APIRouter, Request
+from pydantic import BaseModel
+from sqlalchemy import text
 import pandas as pd
 
 from ..schemas.ml import InputFidelisation, InputForecast, InputSentiment, PricePredictRequest
@@ -300,4 +303,94 @@ def revenue_forecast(horizon: int = 6) -> dict:
             for d, v in zip(dates, values)]
 
     return {"status": "success", "model": "Revenue Forecast", "history": history, "forecast": rows}
+
+
+# ── n8n Alerts ──────────────────────────────────────────────
+class AlertCreate(BaseModel):
+    pipeline: str
+    severity: str = "error"
+    title: str
+    message: str
+    details: dict = {}
+
+
+@router.post("/alerts")
+def create_alert(alert: AlertCreate) -> dict:
+    import json
+
+    from ..db import get_engine
+
+    engine = get_engine()
+    with engine.connect() as conn:
+        conn.execute(
+            text("""
+                INSERT INTO n8n_alerts (pipeline, severity, title, message, details)
+                VALUES (:pipeline, :severity, :title, :message, :details::jsonb)
+            """),
+            {
+                "pipeline": alert.pipeline,
+                "severity": alert.severity,
+                "title": alert.title,
+                "message": alert.message,
+                "details": json.dumps(alert.details),
+            },
+        )
+        conn.commit()
+    return {"status": "success"}
+
+
+@router.get("/alerts")
+def get_alerts(limit: int = 50) -> list[dict]:
+    from ..db import get_engine
+
+    engine = get_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(
+            text("""
+                SELECT id, pipeline, severity, title, message, details, created_at, is_read
+                FROM n8n_alerts
+                ORDER BY created_at DESC
+                LIMIT :limit
+            """),
+            {"limit": limit},
+        ).fetchall()
+    return [
+        {
+            "id": r[0],
+            "pipeline": r[1],
+            "severity": r[2],
+            "title": r[3],
+            "message": r[4],
+            "details": r[5],
+            "created_at": str(r[6]),
+            "is_read": r[7],
+        }
+        for r in rows
+    ]
+
+
+@router.post("/alerts/{alert_id}/read")
+def mark_alert_read(alert_id: int) -> dict:
+    from ..db import get_engine
+
+    engine = get_engine()
+    with engine.connect() as conn:
+        conn.execute(
+            text("UPDATE n8n_alerts SET is_read = TRUE WHERE id = :id"),
+            {"id": alert_id},
+        )
+        conn.commit()
+    return {"status": "success"}
+
+
+@router.get("/alerts/unread-count")
+def unread_alert_count() -> dict:
+    from ..db import get_engine
+
+    engine = get_engine()
+    with engine.connect() as conn:
+        count = conn.execute(
+            text("SELECT COUNT(*) FROM n8n_alerts WHERE is_read = FALSE")
+        ).scalar()
+    return {"unread_count": count}
 

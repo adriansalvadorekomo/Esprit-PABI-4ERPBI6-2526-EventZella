@@ -2,7 +2,7 @@
 REM Build script for EventZilla backend Docker image
 
 echo Building EventZilla backend Docker image...
-docker build -f backend.Dockerfile -t eventzilla-backend:latest .
+docker build -f backend.Dockerfile -t eventzilla-fastapi:latest .
 
 if %ERRORLEVEL% EQU 0 (
     echo.

@@ -30,3 +30,33 @@ def detect_anomalies():
 @router.post("/predict/deep-learning")
 def predict_deep_learning(data: InputFidelisation):
     return get_service().predict_deep_learning(data)
+
+
+@router.post("/train/sarima")
+def train_sarima():
+    return get_service().train_sarima()
+
+
+@router.post("/train/prophet")
+def train_prophet():
+    return get_service().train_prophet()
+
+
+@router.post("/train/lstm")
+def train_lstm():
+    return get_service().train_lstm()
+
+
+@router.post("/train/loyalty")
+def train_loyalty():
+    return get_service().train_loyalty()
+
+
+@router.post("/train/price")
+def train_price():
+    return get_service().train_price()
+
+
+@router.post("/train/compare")
+def compare_models():
+    return get_service().compare_models()

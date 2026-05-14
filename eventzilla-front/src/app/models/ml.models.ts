@@ -57,6 +57,7 @@ export interface ForecastResponse {
   status: string;
   category?: string;
   model?: string;
+  best_model?: string;
   history?: Array<{
     date: string;
     value: number;
@@ -161,6 +162,17 @@ export interface ClusterRequest {
   event_type: 'Corporate Event' | 'Private Party' | 'Wedding';
   reservation_status: 'confirmed' | 'cancelled' | 'pending';
   algo?: 'kmeans' | 'dbscan';
+}
+
+export interface N8nAlert {
+  id: number;
+  pipeline: string;
+  severity: string;
+  title: string;
+  message: string;
+  details: Record<string, unknown>;
+  created_at: string;
+  is_read: boolean;
 }
 
 export interface ClusterResponse {

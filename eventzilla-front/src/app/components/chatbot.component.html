@@ -1,3 +1,4 @@
+<ng-container *ngIf="auth.isLoggedIn()">
 <!-- FAB -->
 <button class="chat-fab" *ngIf="!open()" (click)="toggle()" title="AI Assistant">
   <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
@@ -77,3 +78,5 @@
   </div>
 
 </div>
+
+</ng-container>
