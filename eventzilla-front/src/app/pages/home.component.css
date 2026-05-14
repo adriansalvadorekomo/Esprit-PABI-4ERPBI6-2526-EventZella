@@ -465,12 +465,14 @@
 
 /* Catalog grid */
 .catalog-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 16px;
 }
 
 .catalog-card {
+  width: 240px;
   padding: 24px;
   background: var(--bg-elevated);
   border: 1px solid var(--border-subtle);
@@ -480,6 +482,7 @@
   flex-direction: column;
   gap: 12px;
   transition: all 0.15s ease;
+  flex: 0 0 auto;
 }
 
 .catalog-card:hover {
@@ -942,3 +945,114 @@
   margin-top: 2px;
   font-style: italic;
 }
+
+
+/* ── Revenue bar chart ─────────────────────────────────────── */
+.revenue-bar-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  height: 180px;
+  padding: 0 4px;
+  margin-top: 8px;
+}
+
+.rev-bar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+}
+
+.rev-bar-val {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.rev-bar-track {
+  flex: 1;
+  width: 100%;
+  background: var(--border-subtle);
+  border-radius: 6px 6px 0 0;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+}
+
+.rev-bar-fill {
+  width: 100%;
+  background: linear-gradient(180deg, #3fb950 0%, #2ea043 100%);
+  border-radius: 6px 6px 0 0;
+  transition: height 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  min-height: 4px;
+}
+
+.rev-bar-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-align: center;
+  white-space: nowrap;
+}
+
+
+.rev-loading {
+  text-align: center;
+  padding: 40px 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.rev-spinner {
+  width: 28px; height: 28px;
+  border: 3px solid var(--border-subtle);
+  border-top-color: #3fb950;
+  border-radius: 50%;
+  animation: rev-spin 0.7s linear infinite;
+  margin: 0 auto 12px;
+}
+@keyframes rev-spin { to { transform: rotate(360deg); } }
+
+
+/* ── Horizon selector ──────────────────────────────────────── */
+.horizon-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.horizon-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.horizon-btns {
+  display: flex;
+  gap: 6px;
+}
+.horizon-btns button {
+  padding: 5px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.horizon-btns button:hover {
+  border-color: #3fb950;
+  color: #3fb950;
+}
+.horizon-btns button.active {
+  background: #3fb950;
+  border-color: #3fb950;
+  color: #fff;
+  font-weight: 600;
+}
+
+

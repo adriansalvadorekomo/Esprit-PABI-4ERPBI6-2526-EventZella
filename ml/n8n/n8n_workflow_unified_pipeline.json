@@ -1,0 +1,1152 @@
+{
+  "name": "EventZella Unified Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 2
+            }
+          ]
+        }
+      },
+      "name": "Unified Schedule",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [1200, 50]
+    },
+
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://fastapi:8000/lab/train/price",
+        "options": {}
+      },
+      "name": "Train Price Model",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [250, 300],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    f.price,\n    f.budget,\n    f.marketing_spend,\n    f.new_beneficiaries,\n    f.reservations,\n    e.type::text as type,\n    r.status::text as status,\n\n    COUNT(f.event_sk) OVER (PARTITION BY f.sk_beneficiary) as nb_events,\n    AVG(f.final_price) OVER (PARTITION BY f.sk_beneficiary) as avg_spent_user\n\nFROM fact_suivi_event f\nLEFT JOIN dim_event e ON f.event_sk = e.event_sk\nLEFT JOIN dim_reservation r ON f.reservation_sk = r.reservation_sk\n\nORDER BY e.event_date DESC\n  LIMIT 1;",
+        "options": {}
+      },
+      "name": "Fetch Latest Event Data",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [250, 500],
+      "credentials": {
+        "postgres": {
+          "id": "GuXQ4ZWVBc0pJBzP",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://fastapi:8000/predict/price",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"price\": {{$json[\"price\"]}},\n  \"budget\": {{$json[\"budget\"]}},\n  \"marketing_spend\": {{$json[\"marketing_spend\"]}},\n  \"new_beneficiaries\": {{$json[\"new_beneficiaries\"]}},\n  \"reservations\": {{$json[\"reservations\"]}},\n  \"nb_events\": {{$json[\"nb_events\"]}},\n  \"avg_spent_user\": {{$json[\"avg_spent_user\"]}},\n  \"type\": \"{{$json[\"type\"]}}\",\n  \"status\": \"{{$json[\"status\"]}}\"\n}",
+        "options": {}
+      },
+      "name": "Predict Price API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [250, 700],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "list",
+          "cachedResultName": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "predictions",
+          "mode": "list",
+          "cachedResultName": "predictions"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "price": "={{$node[\"Fetch Latest Event Data\"].json[\"price\"]}}",
+            "budget": "={{$node[\"Fetch Latest Event Data\"].json[\"budget\"]}}",
+            "marketing_spend": "={{$node[\"Fetch Latest Event Data\"].json[\"marketing_spend\"]}}",
+            "new_beneficiaries": "={{$node[\"Fetch Latest Event Data\"].json[\"new_beneficiaries\"]}}",
+            "reservations": "={{$node[\"Fetch Latest Event Data\"].json[\"reservations\"]}}",
+            "status": "={{$node[\"Fetch Latest Event Data\"].json[\"status\"]}}",
+            "created_at": "2026-04-25T13:51:57",
+            "event_type": "={{$node[\"Fetch Latest Event Data\"].json[\"type\"]}}",
+            "predictions": "={{$node[\"Predict Price API\"].json[\"prediction\"]}}"
+          },
+          "matchingColumns": ["id"],
+          "schema": [
+            { "id": "price", "displayName": "price", "required": false, "defaultMatch": false, "display": true, "type": "number", "canBeUsedToMatch": true },
+            { "id": "budget", "displayName": "budget", "required": false, "defaultMatch": false, "display": true, "type": "number", "canBeUsedToMatch": true },
+            { "id": "marketing_spend", "displayName": "marketing_spend", "required": false, "defaultMatch": false, "display": true, "type": "number", "canBeUsedToMatch": true },
+            { "id": "new_beneficiaries", "displayName": "new_beneficiaries", "required": false, "defaultMatch": false, "display": true, "type": "number", "canBeUsedToMatch": true },
+            { "id": "reservations", "displayName": "reservations", "required": false, "defaultMatch": false, "display": true, "type": "number", "canBeUsedToMatch": true },
+            { "id": "event_type", "displayName": "event_type", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "status", "displayName": "status", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "predictions", "displayName": "predictions", "required": false, "defaultMatch": false, "display": true, "type": "number", "canBeUsedToMatch": true },
+            { "id": "created_at", "displayName": "created_at", "required": false, "defaultMatch": false, "display": true, "type": "dateTime", "canBeUsedToMatch": true }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "name": "Store Prediction in Postgres",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [250, 900],
+      "credentials": {
+        "postgres": {
+          "id": "GuXQ4ZWVBc0pJBzP",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://fastapi:8000/alerts",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "pipeline", "value": "price_prediction" },
+            { "name": "severity", "value": "warning" },
+            { "name": "title", "value": "Prediction API Error" },
+            { "name": "message", "value": "={{ $json.error || 'Price prediction request failed' }}" },
+            { "name": "details", "value": "={{ $json }}" }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Log Prediction Error",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [550, 900]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://fastapi:8000/alerts",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "pipeline", "value": "price_prediction" },
+            { "name": "severity", "value": "success" },
+            { "name": "title", "value": "Price Prediction Completed" },
+            { "name": "message", "value": "=Price predicted successfully: {{ $node[\"Predict Price API\"].json[\"prediction\"] }} for event type {{ $node[\"Fetch Latest Event Data\"].json[\"type\"] }}" },
+            { "name": "details", "value": "={{ $node[\"Predict Price API\"].json }}" }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Log Prediction Success",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [550, 1100]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "subject": "=Erreur Training ML - {{ $now.format('dd/MM/yyyy HH:mm') }}",
+        "emailType": "html",
+        "html": "=<html>\n  <body style=\"margin:0; padding:0; background:#f4f7fb; font-family:Arial, Helvetica, sans-serif; color:#182230;\">\n    <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#f4f7fb; padding:28px 0;\">\n      <tr>\n        <td align=\"center\">\n          <table role=\"presentation\" width=\"680\" cellpadding=\"0\" cellspacing=\"0\" style=\"width:680px; max-width:94%; background:#ffffff; border:1px solid #d9e2ec; border-radius:8px; overflow:hidden;\">\n            <tr>\n              <td style=\"background:#b42318; padding:28px 32px; color:#ffffff;\">\n                <div style=\"font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:#fecaca; font-weight:700;\">EventZella Pipeline Alert</div>\n                <h1 style=\"margin:10px 0 6px; font-size:24px; line-height:1.25; font-weight:700;\">Training Failed</h1>\n                <div style=\"font-size:14px; color:#fecaca;\">{{ $now.format('dd/MM/yyyy HH:mm') }}</div>\n              </td>\n            </tr>\n            <tr>\n              <td style=\"padding:28px 32px 12px;\">\n                <p style=\"margin:0 0 18px; font-size:15px; line-height:1.6; color:#344054;\">The price prediction model training pipeline encountered an error.</p>\n                <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#fef2f2; border:1px solid #fecaca; border-radius:8px; margin:0 0 22px;\">\n                  <tr>\n                    <td style=\"padding:16px 18px;\">\n                      <div style=\"font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:#b42318; font-weight:700; margin-bottom:8px;\">Error Details</div>\n                      <div style=\"font-size:13px; line-height:1.7; color:#912018; font-family:Consolas, monospace;\">Erreur : {{$json[\"error\"]}}<br><br>Output : {{$json[\"output\"]}}</div>\n                    </td>\n                  </tr>\n                </table>\n              </td>\n            </tr>\n          </table>\n        </td>\n      </tr>\n    </table>\n  </body>\n</html>",
+        "toList": ["larrymclarens@gmail.com"]
+      },
+      "name": "Send Training Failure Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [550, 300],
+      "credentials": {
+        "googleGmailOAuth2Api": {
+          "id": "larry-gmail-oauth2",
+          "name": "Gmail Account"
+        }
+      }
+    },
+
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://fastapi:8000/lab/train/loyalty",
+        "options": {}
+      },
+      "name": "Train Loyalty Model",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    f.sk_beneficiary,\n    f.price,\n    f.budget,\n    f.final_price,\n    f.rating,\n    f.visitors,\n    f.marketing_spend,\n    f.id_complaint,\n    e.type,\n    e.event_date\nFROM fact_suivi_event f\nLEFT JOIN dim_event e ON f.event_sk = e.event_sk",
+        "options": {}
+      },
+      "name": "Load Beneficiary Data",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [850, 500],
+      "credentials": {
+        "postgres": {
+          "id": "GuXQ4ZWVBc0pJBzP",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = [];\n\nfor (const item of $input.all()) {\n  const price = item.json.price || 0;\n  const budget = item.json.budget || 0;\n  const final_price = item.json.final_price || 0;\n\n  items.push({\n    json: {\n      price: price,\n      budget: budget,\n      final_price: final_price,\n      rating: item.json.rating || 0,\n      visitors: item.json.visitors || 0,\n      marketing_spend: item.json.marketing_spend || 0,\n      price_budget_ratio: price / (budget + 0.01),\n      margin: final_price - price,\n      has_complaint: item.json.id_complaint ? 1 : 0,\n      type_encoded: 0,\n      season_encoded: 0,\n      is_weekend: 0,\n      month: new Date(item.json.event_date).getMonth() + 1,\n      sk_beneficiary: item.json.sk_beneficiary\n    }\n  });\n}\n\nreturn items;"
+      },
+      "name": "Prepare Features for ML",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 700]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://fastapi:8000/predict/fidelisation",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "price", "value": "={{ $json.price ?? 0 }}" },
+            { "name": "budget", "value": "={{ $json.budget ?? 0 }}" },
+            { "name": "final_price", "value": "={{ $json.final_price ?? 0 }}" },
+            { "name": "rating", "value": "={{ $json.rating ?? 0 }}" },
+            { "name": "visitors", "value": "={{ $json.visitors ?? 0 }}" },
+            { "name": "marketing_spend", "value": "={{ $json.marketing_spend ?? 0 }}" },
+            { "name": "price_budget_ratio", "value": "={{ $json.price_budget_ratio ?? 0 }}" },
+            { "name": "margin", "value": "={{ $json.margin ?? 0 }}" },
+            { "name": "has_complaint", "value": "={{ $json.has_complaint ?? 0 }}" },
+            { "name": "type_encoded", "value": "={{ $json.type_encoded ?? 0 }}" },
+            { "name": "season_encoded", "value": "={{ $json.season_encoded ?? 0 }}" },
+            { "name": "is_weekend", "value": "={{ $json.is_weekend ?? 0 }}" },
+            { "name": "month", "value": "={{ $json.month ?? 1 }}" }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Predict Loyalty API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [850, 900]
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst previousItem = $(\"Prepare Features for ML\").first().json;\nreturn [{\n  json: {\n    sk_beneficiary: previousItem.sk_beneficiary,\n    label: response.label,\n    probabilite_fidelite: response.probabilite_fidelite,\n    action_recommandee: response.action_recommandee\n  }\n}];"
+      },
+      "name": "Transform Prediction Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 1100]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "675fbdc3-3d5e-434b-a725-33b0b3aa6afe",
+              "name": "sk_beneficiary",
+              "value": "={{ $json.sk_beneficiary }}",
+              "type": "string"
+            },
+            {
+              "id": "8a488a12-a9de-4072-9f3e-77f0d23298ae",
+              "name": "label",
+              "value": "={{ $json.label }}",
+              "type": "string"
+            },
+            {
+              "id": "2694c24f-4ac6-4091-b4fa-1101eb87fa63",
+              "name": "probabilite",
+              "value": "={{ $json.probabilite_fidelite }}",
+              "type": "string"
+            },
+            {
+              "id": "fa0dab71-5c66-4b5e-b5e5-b18fe535a479",
+              "name": "action",
+              "value": "={{ $json.action_recommandee }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "name": "Format Data for Export",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [850, 1300]
+    },
+    {
+      "parameters": {
+        "binaryPropertyName": "predictions_{{ $now.format('yyyy-MM-dd') }}.csv",
+        "options": {}
+      },
+      "name": "Generate CSV Report",
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [1200, 1400]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9b69d91c-be79-4a16-ae6b-3cef8d10a021",
+              "leftValue": "={{ $json.label }}",
+              "rightValue": "Fidele",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "name": "Check Loyalty Level",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [850, 1500]
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "name": "Aggregate Loyal Customers",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [600, 1700]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "subject": "=Rapport de fidelisation - {{ $now.format('dd/MM/yyyy') }}",
+        "emailType": "html",
+        "html": "=<html>\n  <body style=\"margin:0; padding:0; background:#f4f7fb; font-family:Arial, Helvetica, sans-serif; color:#182230;\">\n    <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#f4f7fb; padding:28px 0;\">\n      <tr>\n        <td align=\"center\">\n          <table role=\"presentation\" width=\"680\" cellpadding=\"0\" cellspacing=\"0\" style=\"width:680px; max-width:94%; background:#ffffff; border:1px solid #d9e2ec; border-radius:8px; overflow:hidden;\">\n            <tr>\n              <td style=\"background:#0f2f4f; padding:28px 32px; color:#ffffff;\">\n                <div style=\"font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:#9cc7f5; font-weight:700;\">EventZella Fidelisation</div>\n                <h1 style=\"margin:10px 0 6px; font-size:24px; line-height:1.25; font-weight:700;\">Clients Fideles Detectes</h1>\n                <div style=\"font-size:14px; color:#d7e6f7;\">Rapport genere le {{ $now.format('dd/MM/yyyy HH:mm') }}</div>\n              </td>\n            </tr>\n            <tr>\n              <td style=\"padding:28px 32px 12px;\">\n                <p style=\"margin:0 0 18px; font-size:15px; line-height:1.6; color:#344054;\">La campagne de fidelisation a identifie <strong style=\"color:#175cd3;\">{{ $json.data.length }}</strong> beneficiaires fideles. Voici le recapitulatif des actions recommandees.</p>\n                <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-collapse:collapse; border:1px solid #d9e2ec; border-radius:8px; overflow:hidden; margin:0 0 22px;\">\n                  <tr>\n                    <th align=\"left\" style=\"background:#f8fafc; color:#475467; font-size:12px; text-transform:uppercase; letter-spacing:.05em; padding:12px 14px; border-bottom:1px solid #d9e2ec;\">Beneficiaire</th>\n                    <th align=\"center\" style=\"background:#f8fafc; color:#475467; font-size:12px; text-transform:uppercase; letter-spacing:.05em; padding:12px 14px; border-bottom:1px solid #d9e2ec;\">Probabilite</th>\n                    <th align=\"center\" style=\"background:#f8fafc; color:#475467; font-size:12px; text-transform:uppercase; letter-spacing:.05em; padding:12px 14px; border-bottom:1px solid #d9e2ec;\">Action</th>\n                  </tr>\n                  {{ $json.data.map(item => `<tr><td style=\"padding:10px 14px; border-bottom:1px solid #eef2f6; font-size:13px;\">${item.sk_beneficiary}</td><td align=\"center\" style=\"padding:10px 14px; border-bottom:1px solid #eef2f6; font-size:13px;\">${item.probabilite}%</td><td align=\"center\" style=\"padding:10px 14px; border-bottom:1px solid #eef2f6; font-size:13px;\">${item.action}</td></tr>`).join('') }}\n                </table>\n              </td>\n            </tr>\n          </table>\n        </td>\n      </tr>\n    </table>\n  </body>\n</html>",
+        "toList": ["larrymclarens@gmail.com"]
+      },
+      "name": "Send Loyal Customer Report",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [600, 1900],
+      "credentials": {
+        "googleGmailOAuth2Api": {
+          "id": "larry-gmail-oauth2",
+          "name": "Gmail Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "name": "Aggregate AtRisk Customers",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [1100, 1700]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "subject": "=Offre speciale rien que pour vous - EventZella",
+        "emailType": "html",
+        "html": "=<html>\n  <body style=\"margin:0; padding:0; background:#f4f7fb; font-family:Arial, Helvetica, sans-serif; color:#182230;\">\n    <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#f4f7fb; padding:28px 0;\">\n      <tr>\n        <td align=\"center\">\n          <table role=\"presentation\" width=\"680\" cellpadding=\"0\" cellspacing=\"0\" style=\"width:680px; max-width:94%; background:#ffffff; border:1px solid #d9e2ec; border-radius:8px; overflow:hidden;\">\n            <tr>\n              <td style=\"background:#0f2f4f; padding:28px 32px; color:#ffffff;\">\n                <div style=\"font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:#9cc7f5; font-weight:700;\">EventZella</div>\n                <h1 style=\"margin:10px 0 6px; font-size:24px; line-height:1.25; font-weight:700;\">Une offre speciale rien que pour vous</h1>\n                <div style=\"font-size:14px; color:#d7e6f7;\">Nous avons pense a vous</div>\n              </td>\n            </tr>\n            <tr>\n              <td style=\"padding:28px 32px 12px;\">\n                <p style=\"margin:0 0 18px; font-size:15px; line-height:1.6; color:#344054;\">Bonjour,</p>\n                <p style=\"margin:0 0 18px; font-size:15px; line-height:1.6; color:#344054;\">Nous avons analyse votre activite et souhaiterions vous proposer une experience encore meilleure. Voici notre recommandation personnalisee pour vous :</p>\n                <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-collapse:separate; border-spacing:0; margin:0 0 22px;\">\n                  <tr>\n                    <td style=\"background:#eef6ff; border:1px solid #b8d9ff; border-radius:8px; padding:24px;\">\n                      <div style=\"font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:#175cd3; font-weight:700; margin-bottom:8px;\">Recommandation</div>\n                      <div style=\"font-size:32px; line-height:1.1; color:#175cd3; font-weight:600; margin-bottom:14px;\">Profitez de -20%</div>\n                      <p style=\"margin:0 0 10px; font-size:14px; line-height:1.6; color:#344054;\">Sur votre prochain evenement - parce que vous meritez le meilleur.</p>\n                      <div style=\"background:#ffffff; border:1px solid #b8d9ff; border-radius:6px; padding:14px 18px; font-size:13px; color:#475467;\">Utilisez le code : <strong style=\"color:#175cd3; font-family:Consolas, monospace; font-size:16px; letter-spacing:.1em;\">FIDELE20</strong></div>\n                    </td>\n                  </tr>\n                </table>\n                <p style=\"margin:0; font-size:13px; color:#98a2b3;\">Cette offre est valable jusqu'au {{ $now.add(30, 'days').format('dd/MM/yyyy') }} dans la limite des stocks disponibles.</p>\n              </td>\n            </tr>\n          </table>\n        </td>\n      </tr>\n    </table>\n  </body>\n</html>",
+        "toList": ["larrymclarens@gmail.com"]
+      },
+      "name": "Send AtRisk Customer Offer",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [1100, 1900],
+      "credentials": {
+        "googleGmailOAuth2Api": {
+          "id": "larry-gmail-oauth2",
+          "name": "Gmail Account"
+        }
+      }
+    },
+
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://flask:5000/train-models",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"action\": \"start_training\",\n  \"reason\": \"Scheduled update from n8n\"\n}",
+        "options": {}
+      },
+      "name": "Train Cluster Models",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1500, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM view_event_analysis LIMIT 10;",
+        "options": {}
+      },
+      "name": "Load View for Clustering",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [1500, 500],
+      "credentials": {
+        "postgres": {
+          "id": "GuXQ4ZWVBc0pJBzP",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = [];\nconst allItems = $input.all();\n\nconst subjectCounts = {};\nlet totalSubjects = 0;\nfor (const item of allItems) {\n  const s = item.json.complaint_subject;\n  if (s) { subjectCounts[s] = (subjectCounts[s] || 0) + 1; totalSubjects++; }\n}\n\nfor (const item of allItems) {\n  const d = item.json;\n  const eventType = d.event_type || '';\n  const resStatus = (d.reservation_status || '').toLowerCase().trim();\n  const subject = d.complaint_subject;\n  const subjectFreq = subject ? (subjectCounts[subject] || 0) / Math.max(totalSubjects, 1) : 0;\n\n  items.push({\n    json: {\n      budget: Number(d.budget) || 0,\n      price: Number(d.price) || 0,\n      final_price: Number(d.final_price) || 0,\n      rating: Number(d.rating) || 0,\n      visitors: Number(d.visitors) || 0,\n      complaint_status_bin: d.complaint_status ? 1 : 0,\n      complaint_subject_freq: subjectFreq,\n      ['event_type_Corporate Event']: eventType === 'Corporate Event' ? 1 : 0,\n      ['event_type_Private Party']: eventType === 'Private Party' ? 1 : 0,\n      ['event_type_Wedding']: eventType === 'Wedding' ? 1 : 0,\n      reservation_status_cancelled: resStatus === 'cancelled' ? 1 : 0,\n      reservation_status_confirmed: resStatus === 'confirmed' ? 1 : 0,\n      reservation_status_pending: resStatus === 'pending' ? 1 : 0\n    }\n  });\n}\nreturn items;"
+      },
+      "name": "Transform KMeans Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1500, 700]
+    },
+    {
+      "parameters": {
+        "batchSize": 500,
+        "options": {}
+      },
+      "name": "Batch Process Rows",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [1500, 900]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://flask:5000/predict-cluster",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "final_price", "value": "={{ $json.final_price }}" },
+            { "name": "price", "value": "={{ $json.price }}" },
+            { "name": "budget", "value": "={{ $json.budget }}" },
+            { "name": "rating", "value": "={{ $json.rating }}" },
+            { "name": "visitors", "value": "={{ $json.visitors }}" },
+            { "name": "complaint_status_bin", "value": "={{ $json.complaint_status_bin }}" },
+            { "name": "complaint_subject_freq", "value": "={{ $json.complaint_subject_freq }}" },
+            { "name": "event_type_Corporate Event", "value": "={{ $json[\"event_type_Corporate Event\"] }}" },
+            { "name": "event_type_Private Party", "value": "={{ $json[\"event_type_Private Party\"] }}" },
+            { "name": "event_type_Wedding", "value": "={{ $json.event_type_Wedding }}" },
+            { "name": "reservation_status_cancelled", "value": "={{ $json.reservation_status_cancelled }}" },
+            { "name": "reservation_status_confirmed", "value": "={{ $json.reservation_status_confirmed }}" },
+            { "name": "reservation_status_pending", "value": "={{ $json.reservation_status_pending }}" },
+            { "name": "algo", "value": "kmeans" }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Predict KMeans Cluster",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1500, 1100]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "01dce786-d89e-4001-807c-4d30b048f2a4",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "error",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "Check Cluster Error",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [1500, 1300]
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "name": "Aggregate Error Emails",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [1300, 1500]
+    },
+    {
+      "parameters": {
+        "sendTo": "larrymclarens@gmail.com",
+        "subject": "Error kmeans",
+        "message": "=<h3>Une erreur est survenue dans le modele ML</h3> <p><strong>Details :</strong> </p> <p><strong>Heure de l'incident :</strong> {{ $now }}</p> <p><strong>Statut renvoye :</strong> {{ $json.status }}</p> <br> <p><i>Ceci est une alerte automatique envoyee par n8n.</i></p>",
+        "options": {}
+      },
+      "name": "Send KMeans Error Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [1300, 1700],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "omzzrA8o3PmkMEfD",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1Z3fzBE0LdsjUzOVOpZer0R6xpiSaslvybFf_WgdZ9ro",
+          "mode": "list",
+          "cachedResultName": "Feuille de calcul sans titre",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1VjjBj2vayiRvnQN3M0_QueklnEF6DJX_nhnm5zugjqE/edit?gid=0#gid=0"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 338071661,
+          "mode": "list",
+          "cachedResultName": "kmeans",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1VjjBj2vayiRvnQN3M0_QueklnEF6DJX_nhnm5zugjqE/edit?gid=0#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "algorithm": "={{$json.algorithm}}",
+            "cluster_id": "={{$json.cluster_id}}",
+            "status": "={{ $json.status }}",
+            "cluster_name": "={{ $json.cluster_name }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            { "id": "algorithm", "displayName": "algorithm", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "cluster_id", "displayName": "cluster_id", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "status", "displayName": "status", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "cluster_name", "displayName": "cluster_name", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "name": "Append KMeans to Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [1700, 1500],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "U1gl8LSbJYVp7mdk",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://flask:5000/train-models",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"action\": \"start_training\",\n  \"reason\": \"Scheduled update from n8n\"\n}",
+        "options": {}
+      },
+      "name": "Train DBSCAN Model",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [2150, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM view_event_analysis ;",
+        "options": {}
+      },
+      "name": "Load View for DBSCAN",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [2150, 500],
+      "credentials": {
+        "postgres": {
+          "id": "GuXQ4ZWVBc0pJBzP",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = [];\nconst allItems = $input.all();\n\nconst subjectCounts = {};\nlet totalSubjects = 0;\nfor (const item of allItems) {\n  const s = item.json.complaint_subject;\n  if (s) { subjectCounts[s] = (subjectCounts[s] || 0) + 1; totalSubjects++; }\n}\n\nfor (const item of allItems) {\n  const d = item.json;\n  const eventType = d.event_type || '';\n  const resStatus = (d.reservation_status || '').toLowerCase().trim();\n  const subject = d.complaint_subject;\n  const subjectFreq = subject ? (subjectCounts[subject] || 0) / Math.max(totalSubjects, 1) : 0;\n\n  items.push({\n    json: {\n      budget: Number(d.budget) || 0,\n      price: Number(d.price) || 0,\n      final_price: Number(d.final_price) || 0,\n      rating: Number(d.rating) || 0,\n      visitors: Number(d.visitors) || 0,\n      complaint_status_bin: d.complaint_status ? 1 : 0,\n      complaint_subject_freq: subjectFreq,\n      ['event_type_Corporate Event']: eventType === 'Corporate Event' ? 1 : 0,\n      ['event_type_Private Party']: eventType === 'Private Party' ? 1 : 0,\n      ['event_type_Wedding']: eventType === 'Wedding' ? 1 : 0,\n      reservation_status_cancelled: resStatus === 'cancelled' ? 1 : 0,\n      reservation_status_confirmed: resStatus === 'confirmed' ? 1 : 0,\n      reservation_status_pending: resStatus === 'pending' ? 1 : 0\n    }\n  });\n}\nreturn items;"
+      },
+      "name": "Transform DBSCAN Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2150, 700]
+    },
+    {
+      "parameters": {
+        "batchSize": 500,
+        "options": {}
+      },
+      "name": "Batch DBSCAN Rows",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [2150, 900]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://flask:5000/predict-cluster",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "final_price", "value": "={{ $json.final_price }}" },
+            { "name": "price", "value": "={{ $json.price }}" },
+            { "name": "budget", "value": "={{ $json.budget }}" },
+            { "name": "rating", "value": "={{ $json.rating }}" },
+            { "name": "visitors", "value": "={{ $json.visitors }}" },
+            { "name": "complaint_status_bin", "value": "={{ $json.complaint_status_bin }}" },
+            { "name": "complaint_subject_freq", "value": "={{ $json.complaint_subject_freq }}" },
+            { "name": "event_type_Corporate Event", "value": "={{ $json[\"event_type_Corporate Event\"] }}" },
+            { "name": "event_type_Private Party", "value": "={{ $json[\"event_type_Private Party\"] }}" },
+            { "name": "event_type_Wedding", "value": "={{ $json.event_type_Wedding }}" },
+            { "name": "reservation_status_cancelled", "value": "={{ $json.reservation_status_cancelled }}" },
+            { "name": "reservation_status_confirmed", "value": "={{ $json.reservation_status_confirmed }}" },
+            { "name": "reservation_status_pending", "value": "={{ $json.reservation_status_pending }}" },
+            { "name": "algo", "value": "dbscan" }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Predict DBSCAN Cluster",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [2150, 1100]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "01dce786-d89e-4001-807c-4d30b048f2a4",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "error",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "Check DBSCAN Error",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [2150, 1300]
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "name": "Aggregate DBSCAN Errors",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [1950, 1500]
+    },
+    {
+      "parameters": {
+        "sendTo": "larrymclarens@gmail.com",
+        "subject": "Error dbscan",
+        "message": "=<h3>Une erreur est survenue dans le modele ML</h3> <p><strong>Details :</strong> </p> <p><strong>Heure de l'incident :</strong> {{ $now }}</p> <p><strong>Statut renvoye :</strong> {{ $json.status }}</p> <br> <p><i>Ceci est une alerte automatique envoyee par n8n.</i></p>",
+        "options": {}
+      },
+      "name": "Send DBSCAN Error Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [1950, 1700],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "omzzrA8o3PmkMEfD",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1Z3fzBE0LdsjUzOVOpZer0R6xpiSaslvybFf_WgdZ9ro",
+          "mode": "list",
+          "cachedResultName": "Feuille de calcul sans titre",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1zmSg-I4tOHw_1n7uE3aKy6MZwysw-1RMOoFHsXNmJ3U/edit?gid=0#gid=0"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "dbscan",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1zmSg-I4tOHw_1n7uE3aKy6MZwysw-1RMOoFHsXNmJ3U/edit?gid=0#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "algorithm": "={{$json.algorithm}}",
+            "cluster_id": "={{$json.cluster_id}}",
+            "status": "={{$json.status}}",
+            "cluster_name": "={{$json.cluster_name}}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            { "id": "algorithm", "displayName": "algorithm", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "cluster_id", "displayName": "cluster_id", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "status", "displayName": "status", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "cluster_name", "displayName": "cluster_name", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "name": "Append DBSCAN to Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [2350, 1500],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "U1gl8LSbJYVp7mdk",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Unified Schedule": {
+      "main": [
+        [
+          {
+            "node": "Train Price Model",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Train Loyalty Model",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Train Cluster Models",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Train DBSCAN Model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+
+    "Train Price Model": {
+      "main": [
+        [
+          {
+            "node": "Fetch Latest Event Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Training Failure Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Latest Event Data": {
+      "main": [
+        [
+          {
+            "node": "Predict Price API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Predict Price API": {
+      "main": [
+        [
+          {
+            "node": "Store Prediction in Postgres",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Prediction Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Prediction in Postgres": {
+      "main": [
+        [
+          {
+            "node": "Log Prediction Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+
+    "Train Loyalty Model": {
+      "main": [
+        [
+          {
+            "node": "Load Beneficiary Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Beneficiary Data": {
+      "main": [
+        [
+          {
+            "node": "Prepare Features for ML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Features for ML": {
+      "main": [
+        [
+          {
+            "node": "Predict Loyalty API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Predict Loyalty API": {
+      "main": [
+        [
+          {
+            "node": "Transform Prediction Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform Prediction Result": {
+      "main": [
+        [
+          {
+            "node": "Format Data for Export",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Data for Export": {
+      "main": [
+        [
+          {
+            "node": "Check Loyalty Level",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Generate CSV Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Loyalty Level": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Loyal Customers",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Aggregate AtRisk Customers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Loyal Customers": {
+      "main": [
+        [
+          {
+            "node": "Send Loyal Customer Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate AtRisk Customers": {
+      "main": [
+        [
+          {
+            "node": "Send AtRisk Customer Offer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+
+    "Train Cluster Models": {
+      "main": [
+        [
+          {
+            "node": "Load View for Clustering",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load View for Clustering": {
+      "main": [
+        [
+          {
+            "node": "Transform KMeans Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform KMeans Data": {
+      "main": [
+        [
+          {
+            "node": "Batch Process Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Batch Process Rows": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Predict KMeans Cluster",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Predict KMeans Cluster": {
+      "main": [
+        [
+          {
+            "node": "Batch Process Rows",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check Cluster Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Cluster Error": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Error Emails",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Append KMeans to Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Error Emails": {
+      "main": [
+        [
+          {
+            "node": "Send KMeans Error Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+
+    "Train DBSCAN Model": {
+      "main": [
+        [
+          {
+            "node": "Load View for DBSCAN",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load View for DBSCAN": {
+      "main": [
+        [
+          {
+            "node": "Transform DBSCAN Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform DBSCAN Data": {
+      "main": [
+        [
+          {
+            "node": "Batch DBSCAN Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Batch DBSCAN Rows": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Predict DBSCAN Cluster",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Predict DBSCAN Cluster": {
+      "main": [
+        [
+          {
+            "node": "Batch DBSCAN Rows",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check DBSCAN Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check DBSCAN Error": {
+      "main": [
+        [
+          {
+            "node": "Aggregate DBSCAN Errors",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Append DBSCAN to Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate DBSCAN Errors": {
+      "main": [
+        [
+          {
+            "node": "Send DBSCAN Error Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "id": "unified-1"
+}
