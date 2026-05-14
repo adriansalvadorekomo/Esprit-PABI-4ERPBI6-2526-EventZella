@@ -1,0 +1,249 @@
+@import "tailwindcss";
+
+/* ── Design Tokens ─────────────────────────────────────────────────────── */
+:root {
+  --bg-base:        #080c12;
+  --bg-surface:     #0d1117;
+  --bg-elevated:    #161b22;
+  --border-subtle:  rgba(255,255,255,0.07);
+  --border-muted:   rgba(255,255,255,0.12);
+  --text-primary:   #e6edf3;
+  --text-secondary: #8b949e;
+  --text-muted:     #484f58;
+  --accent:         #1f6feb;
+  --accent-hover:   #388bfd;
+  --accent-glow:    rgba(31,111,235,0.25);
+  --glass-bg:       rgba(22,27,34,0.7);
+  --glass-border:   rgba(255,255,255,0.08);
+  --glass-blur:     16px;
+  --radius-sm:      6px;
+  --radius-md:      10px;
+  --radius-lg:      16px;
+  --radius-xl:      24px;
+  --shadow-sm:      0 1px 3px rgba(0,0,0,0.4);
+  --shadow-md:      0 4px 16px rgba(0,0,0,0.5);
+  --shadow-lg:      0 8px 32px rgba(0,0,0,0.6);
+  --shadow-glow:    0 0 24px rgba(31,111,235,0.15);
+}
+
+[data-theme='light'] {
+  --bg-base:        #f4f7fb;
+  --bg-surface:     #ffffff;
+  --bg-elevated:    #eef3f8;
+  --border-subtle:  rgba(15,23,42,0.08);
+  --border-muted:   rgba(15,23,42,0.16);
+  --text-primary:   #0f172a;
+  --text-secondary: #475569;
+  --text-muted:     #64748b;
+  --accent:         #2563eb;
+  --accent-hover:   #1d4ed8;
+  --accent-glow:    rgba(37,99,235,0.18);
+  --glass-bg:       rgba(255,255,255,0.72);
+  --glass-border:   rgba(15,23,42,0.08);
+  --shadow-sm:      0 1px 3px rgba(15,23,42,0.08);
+  --shadow-md:      0 8px 24px rgba(15,23,42,0.08);
+  --shadow-lg:      0 16px 36px rgba(15,23,42,0.12);
+  --shadow-glow:    0 0 24px rgba(37,99,235,0.08);
+}
+
+/* ── Base ──────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100%;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: 'Inter', 'IBM Plex Sans', system-ui, sans-serif;
+  font-feature-settings: 'cv02','cv03','cv04','cv11';
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+app-root { display: block; min-height: 100vh; }
+
+/* ── App Shell ─────────────────────────────────────────────────────────── */
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-base);
+  color: var(--text-primary);
+}
+
+main {
+  flex: 1;
+  padding-top: 64px;
+  background: var(--bg-base);
+}
+
+/* ── Glassmorphism Utilities ───────────────────────────────────────────── */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+}
+
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+
+.glass-card:hover {
+  border-color: rgba(255,255,255,0.14);
+  box-shadow: var(--shadow-lg), var(--shadow-glow);
+  transform: translateY(-2px);
+}
+
+/* ── Scrollbar ─────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+/* ── Focus ring ────────────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ── SVG guard (exclude lucide) ────────────────────────────────────────── */
+svg:not(lucide-icon svg) { max-width: 32px; max-height: 32px; }
+
+/* ── Decorative pseudo-element guard ───────────────────────────────────── */
+body::before, body::after,
+app-root::before, app-root::after,
+.app-shell::before, .app-shell::after {
+  content: none !important;
+  display: none !important;
+}
+
+/* ── Gradient mesh background ──────────────────────────────────────────── */
+.bg-mesh {
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 10%, rgba(31,111,235,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(56,139,253,0.05) 0%, transparent 60%),
+    var(--bg-base);
+}
+
+[data-theme='light'] .bg-mesh {
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 10%, rgba(37,99,235,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(14,165,233,0.08) 0%, transparent 60%),
+    var(--bg-base);
+}
+
+
+/* ── ng-zorro theme overrides ──────────────────────────────────────────── */
+.nz-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+.nz-form-grid-full { grid-template-columns: 1fr; }
+
+.nz-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.nz-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+/* Input number, input, select, date-picker */
+.ant-input-number,
+.ant-select:not(.ant-select-customize-input) .ant-select-selector,
+.ant-picker,
+.ant-input {
+  background: var(--bg-base) !important;
+  border-color: var(--border-muted) !important;
+  color: var(--text-primary) !important;
+  border-radius: 6px !important;
+}
+
+.ant-input-number-input,
+.ant-picker-input > input,
+.ant-select-selection-item,
+.ant-select-selection-placeholder {
+  color: var(--text-primary) !important;
+}
+
+.ant-input-number:hover,
+.ant-select:not(.ant-select-customize-input) .ant-select-selector:hover,
+.ant-picker:hover,
+.ant-input:hover {
+  border-color: var(--accent) !important;
+}
+
+.ant-input-number-focused,
+.ant-input-number:focus,
+.ant-select-focused .ant-select-selector,
+.ant-picker-focused,
+.ant-input:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 2px var(--accent-glow) !important;
+}
+
+/* Dropdown */
+.ant-select-dropdown,
+.ant-picker-dropdown .ant-picker-panel-container {
+  background: var(--bg-elevated) !important;
+  border: 1px solid var(--border-muted) !important;
+  border-radius: 8px !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+
+.ant-select-item {
+  color: var(--text-secondary) !important;
+}
+
+.ant-select-item-option-active,
+.ant-select-item-option-selected {
+  background: var(--accent-glow) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Date picker cells */
+.ant-picker-cell-in-view .ant-picker-cell-inner {
+  color: var(--text-primary) !important;
+}
+.ant-picker-cell:not(.ant-picker-cell-in-view) .ant-picker-cell-inner {
+  color: var(--text-muted) !important;
+}
+.ant-picker-cell-in-view.ant-picker-cell-selected .ant-picker-cell-inner {
+  background: var(--accent) !important;
+}
+.ant-picker-header, .ant-picker-header button {
+  color: var(--text-primary) !important;
+}
+.ant-picker-content th { color: var(--text-muted) !important; }
+
+/* nz-button primary */
+.ant-btn-primary {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+}
+.ant-btn-primary:hover {
+  background: var(--accent-hover) !important;
+  border-color: var(--accent-hover) !important;
+}
+
+/* Input number handler arrows */
+.ant-input-number-handler-wrap {
+  background: var(--bg-elevated) !important;
+  border-color: var(--border-muted) !important;
+}
+.ant-input-number-handler { color: var(--text-secondary) !important; }
