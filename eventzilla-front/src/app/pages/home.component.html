@@ -1,0 +1,704 @@
+<div class="home-page">
+
+<ng-container *ngIf="activeSection() === 'overview'">
+
+<!-- Hero -->
+<section class="hero">
+  <span class="badge">Event Management Platform</span>
+  <h1 class="hero-title">
+    Turn your event data into<br>
+    <span class="accent">unstoppable growth</span>
+  </h1>
+  <p class="hero-desc">
+    Transform scattered data into clear, powerful decisions. From raw data to real impact.
+  </p>
+  <div class="hero-actions">
+    <a class="btn-primary" (click)="navigate('dashboards')" style="cursor:pointer">
+      <lucide-icon name="bar-chart-2" [size]="18"></lucide-icon>
+      <span>View Dashboards</span>
+    </a>
+    <a class="btn-secondary" (click)="navigate('about')" style="cursor:pointer">
+      <span>Learn More</span>
+      <lucide-icon name="arrow-right" [size]="18"></lucide-icon>
+    </a>
+  </div>
+</section>
+
+<!-- Stats -->
+<section class="stats">
+  <div class="stat-card">
+    <span class="stat-value">12,400+</span>
+    <span class="stat-label">Events Created</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-value">98.9%</span>
+    <span class="stat-label">Platform Uptime</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-value">500+</span>
+    <span class="stat-label">Teams Onboarded</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-value">40+</span>
+    <span class="stat-label">Integrations</span>
+  </div>
+</section>
+
+<!-- Problem -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-label">The Problem</span>
+    <h2 class="section-title">See the full picture</h2>
+    <p class="section-desc">
+      Your current system shows isolated data points. We help you see meaningful patterns that drive growth.
+    </p>
+  </div>
+  <div class="card-grid">
+    <div class="card">
+      <div class="card-icon" style="background: rgba(56, 139, 253, 0.1); color: #388bfd;">
+        <lucide-icon name="bar-chart-2" [size]="20"></lucide-icon>
+      </div>
+      <h3 class="card-title">Understand bookings</h3>
+      <p class="card-desc">Analyze real behavior to understand what drives reservations.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background: rgba(163, 113, 247, 0.1); color: #a371f7;">
+        <lucide-icon name="trending-up" [size]="20"></lucide-icon>
+      </div>
+      <h3 class="card-title">Detect demand early</h3>
+      <p class="card-desc">Spot emerging trends before your competitors notice.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background: rgba(63, 185, 80, 0.1); color: #3fb950;">
+        <lucide-icon name="users" [size]="20"></lucide-icon>
+      </div>
+      <h3 class="card-title">Smarter matching</h3>
+      <p class="card-desc">Match users and providers intelligently for better outcomes.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Intelligence -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-label">Intelligence</span>
+    <h2 class="section-title">Smarter decisions, on autopilot</h2>
+    <p class="section-desc">
+      Stop guessing. Get data-backed, real-time answers that guide every decision.
+    </p>
+  </div>
+  <div class="feature-list">
+    <div class="feature">
+      <div class="feature-icon" style="background: rgba(251, 191, 36, 0.1); color: #fbbf24;">
+        <lucide-icon name="zap" [size]="20"></lucide-icon>
+      </div>
+      <div class="feature-content">
+        <h3 class="feature-title">Identifies high-demand opportunities instantly</h3>
+        <p class="feature-desc">Surface gaps in your catalog before they become missed revenue.</p>
+      </div>
+    </div>
+    <div class="feature">
+      <div class="feature-icon" style="background: rgba(247, 120, 186, 0.1); color: #f778ba;">
+        <lucide-icon name="lightbulb" [size]="20"></lucide-icon>
+      </div>
+      <div class="feature-content">
+        <h3 class="feature-title">Recommends new business strategies</h3>
+        <p class="feature-desc">AI-powered suggestions grounded in your actual data.</p>
+      </div>
+    </div>
+    <div class="feature">
+      <div class="feature-icon" style="background: rgba(163, 113, 247, 0.1); color: #a371f7;">
+        <lucide-icon name="brain" [size]="20"></lucide-icon>
+      </div>
+      <div class="feature-content">
+        <h3 class="feature-title">Continuously optimizes recommendations</h3>
+        <p class="feature-desc">Learns and improves every day like a world-class strategist.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Performance -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-label">For Providers</span>
+    <h2 class="section-title">Performance that rewards quality</h2>
+    <p class="section-desc">
+      Visibility becomes fair and merit-based. Quality providers rise to the top automatically.
+    </p>
+  </div>
+  <div class="card-grid">
+    <div class="card">
+      <div class="card-number">01</div>
+      <h3 class="card-title">Track KPIs in real time</h3>
+      <p class="card-desc">Clear conversion and engagement metrics, always up to date.</p>
+    </div>
+    <div class="card">
+      <div class="card-number">02</div>
+      <h3 class="card-title">Benchmark competitors</h3>
+      <p class="card-desc">Know exactly where you stand and what it takes to lead.</p>
+    </div>
+    <div class="card">
+      <div class="card-number">03</div>
+      <h3 class="card-title">Actionable feedback</h3>
+      <p class="card-desc">Receive data-driven guidance to improve service quality.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Why -->
+<section class="section section-final">
+  <div class="section-header">
+    <span class="section-label">Why EventZella</span>
+    <h2 class="section-title">A decision engine, not just analytics</h2>
+    <p class="section-desc">
+      Three powerful forces aligned into one platform.
+    </p>
+  </div>
+  <div class="card-grid">
+    <div class="card card-highlight">
+      <div class="card-icon" style="background: rgba(56, 139, 253, 0.1); color: #388bfd;">
+        <lucide-icon name="rocket" [size]="24"></lucide-icon>
+      </div>
+      <h3 class="card-title">Platform growth</h3>
+      <p class="card-desc">Sustainable business growth driven by real data, not guesswork.</p>
+    </div>
+    <div class="card card-highlight">
+      <div class="card-icon" style="background: rgba(251, 191, 36, 0.1); color: #fbbf24;">
+        <lucide-icon name="award" [size]="24"></lucide-icon>
+      </div>
+      <h3 class="card-title">Provider success</h3>
+      <p class="card-desc">Real success through fair, merit-based visibility.</p>
+    </div>
+    <div class="card card-highlight">
+      <div class="card-icon" style="background: rgba(63, 185, 80, 0.1); color: #3fb950;">
+        <lucide-icon name="shield" [size]="24"></lucide-icon>
+      </div>
+      <h3 class="card-title">User satisfaction</h3>
+      <p class="card-desc">Smarter, more satisfying experiences for every user.</p>
+    </div>
+  </div>
+  <div class="cta">
+    <p class="cta-text">Turn your data into your biggest competitive advantage</p>
+    <a class="btn-primary" (click)="navigate('dashboards')" style="cursor:pointer">
+      <span>Get Started</span>
+      <lucide-icon name="arrow-right" [size]="18"></lucide-icon>
+    </a>
+  </div>
+</section>
+
+</ng-container>
+
+<!-- ═══════════════════════════════════════════════════════════ DASHBOARDS -->
+<ng-container *ngIf="activeSection() === 'dashboards'">
+  <section class="section-page">
+    <div class="section-header">
+      <span class="section-label">Power BI</span>
+      <h2 class="section-title">Dashboards</h2>
+      <p class="section-desc">Live analytics and KPIs for your events platform.</p>
+    </div>
+    <div class="pbi-wrapper">
+      <iframe [src]="pbiUrlSafe" class="pbi-frame" frameborder="0" allowFullScreen="true"></iframe>
+    </div>
+  </section>
+</ng-container>
+
+<!-- ═══════════════════════════════════════════════════════════════════ LAB -->
+<ng-container *ngIf="activeSection() === 'lab'">
+  <section class="section-page">
+    <div class="section-header">
+      <span class="section-label">Decision Tools</span>
+      <h2 class="section-title">Insights &amp; Analysis</h2>
+      <p class="section-desc">Explore your event data with smart tools that help you make better decisions.</p>
+    </div>
+
+    <!-- Model catalog -->
+    <p *ngIf="!selectedModel() && roleSubtitle()" class="role-subtitle" style="text-align:center;font-size:0.85rem;color:var(--text-muted,#8b949e);margin-bottom:0.5rem;">{{ roleSubtitle() }}</p>
+    <div *ngIf="!selectedModel()" class="catalog-grid">
+      <div class="catalog-card" *ngIf="filteredModels().includes('price')" (click)="selectModel('price')">
+        <div class="catalog-card-header">
+          <div class="catalog-icon" style="background:rgba(56,139,253,0.1);color:#388bfd"><lucide-icon name="bar-chart-2" [size]="22"></lucide-icon></div>
+          <button nz-button nzType="text" class="info-btn" (click)="openModelInfo('price', $event)"><lucide-icon name="info" [size]="16"></lucide-icon></button>
+        </div>
+        <h3 class="catalog-title">Smart Event Pricing</h3>
+      </div>
+      <div class="catalog-card" *ngIf="filteredModels().includes('fidel')" (click)="selectModel('fidel')">
+        <div class="catalog-card-header">
+          <div class="catalog-icon" style="background:rgba(163,113,247,0.1);color:#a371f7"><lucide-icon name="trending-up" [size]="22"></lucide-icon></div>
+          <button nz-button nzType="text" class="info-btn" (click)="openModelInfo('fidel', $event)"><lucide-icon name="info" [size]="16"></lucide-icon></button>
+        </div>
+        <h3 class="catalog-title">Client Return Likelihood</h3>
+      </div>
+      <div class="catalog-card" *ngIf="filteredModels().includes('loyalty')" (click)="selectModel('loyalty')">
+        <div class="catalog-card-header">
+          <div class="catalog-icon" style="background:rgba(63,185,80,0.1);color:#3fb950"><lucide-icon name="users" [size]="22"></lucide-icon></div>
+          <button nz-button nzType="text" class="info-btn" (click)="openModelInfo('loyalty', $event)"><lucide-icon name="info" [size]="16"></lucide-icon></button>
+        </div>
+        <h3 class="catalog-title">Client Loyalty Check</h3>
+      </div>
+      <div class="catalog-card" *ngIf="filteredModels().includes('cluster')" (click)="selectModel('cluster')">
+        <div class="catalog-card-header">
+          <div class="catalog-icon" style="background:rgba(251,191,36,0.1);color:#fbbf24"><lucide-icon name="zap" [size]="22"></lucide-icon></div>
+          <button nz-button nzType="text" class="info-btn" (click)="openModelInfo('cluster', $event)"><lucide-icon name="info" [size]="16"></lucide-icon></button>
+        </div>
+        <h3 class="catalog-title">Event Profile Grouping</h3>
+      </div>
+      <div class="catalog-card" *ngIf="filteredModels().includes('forecast')" (click)="selectModel('forecast')">
+        <div class="catalog-card-header">
+          <div class="catalog-icon" style="background:rgba(247,120,186,0.1);color:#f778ba"><lucide-icon name="lightbulb" [size]="22"></lucide-icon></div>
+          <button nz-button nzType="text" class="info-btn" (click)="openModelInfo('forecast', $event)"><lucide-icon name="info" [size]="16"></lucide-icon></button>
+        </div>
+        <h3 class="catalog-title">Booking Demand Forecast</h3>
+      </div>
+      <div class="catalog-card" *ngIf="filteredModels().includes('revenue')" (click)="selectModel('revenue')">
+        <div class="catalog-card-header">
+          <div class="catalog-icon" style="background:rgba(63,185,80,0.1);color:#3fb950"><lucide-icon name="trending-up" [size]="22"></lucide-icon></div>
+          <button nz-button nzType="text" class="info-btn" (click)="openModelInfo('revenue', $event)"><lucide-icon name="info" [size]="16"></lucide-icon></button>
+        </div>
+        <h3 class="catalog-title">Revenue Forecast</h3>
+      </div>
+      <div class="catalog-card" *ngIf="filteredModels().includes('sentiment')" (click)="selectModel('sentiment')">
+        <div class="catalog-card-header">
+          <div class="catalog-icon" style="background:rgba(163,113,247,0.1);color:#a371f7"><lucide-icon name="brain" [size]="22"></lucide-icon></div>
+          <button nz-button nzType="text" class="info-btn" (click)="openModelInfo('sentiment', $event)"><lucide-icon name="info" [size]="16"></lucide-icon></button>
+        </div>
+        <h3 class="catalog-title">Client Feedback Tone</h3>
+      </div>
+      <div class="catalog-card" *ngIf="filteredModels().includes('reco')" (click)="selectModel('reco')">
+        <div class="catalog-card-header">
+          <div class="catalog-icon" style="background:rgba(56,139,253,0.1);color:#388bfd"><lucide-icon name="rocket" [size]="22"></lucide-icon></div>
+          <button nz-button nzType="text" class="info-btn" (click)="openModelInfo('reco', $event)"><lucide-icon name="info" [size]="16"></lucide-icon></button>
+        </div>
+        <h3 class="catalog-title">Personalized Event Suggestions</h3>
+      </div>
+      <div class="catalog-card" *ngIf="filteredModels().includes('anomaly')" (click)="selectModel('anomaly')">
+        <div class="catalog-card-header">
+          <div class="catalog-icon" style="background:rgba(248,81,73,0.1);color:#f85149"><lucide-icon name="shield" [size]="22"></lucide-icon></div>
+          <button nz-button nzType="text" class="info-btn" (click)="openModelInfo('anomaly', $event)"><lucide-icon name="info" [size]="16"></lucide-icon></button>
+        </div>
+        <h3 class="catalog-title">Unusual Activity Alert</h3>
+      </div>
+      <div class="catalog-card" *ngIf="filteredModels().includes('dl')" (click)="selectModel('dl')">
+        <div class="catalog-card-header">
+          <div class="catalog-icon" style="background:rgba(63,185,80,0.1);color:#3fb950"><lucide-icon name="award" [size]="22"></lucide-icon></div>
+          <button nz-button nzType="text" class="info-btn" (click)="openModelInfo('dl', $event)"><lucide-icon name="info" [size]="16"></lucide-icon></button>
+        </div>
+        <h3 class="catalog-title">Advanced Loyalty Predictor</h3>
+      </div>
+    </div>
+
+    <!-- Model info modal -->
+    <div class="info-backdrop" *ngIf="modelInfoVisible() && modelInfoKey()" (click)="modelInfoVisible.set(false)"></div>
+    <div class="info-modal" *ngIf="modelInfoVisible() && modelInfoKey()" role="dialog" aria-modal="true">
+      <div class="info-modal-header">
+        <span class="info-modal-title">{{ modelInfo[modelInfoKey()!].title }}</span>
+        <button class="info-modal-close" (click)="modelInfoVisible.set(false)" aria-label="Close">
+          <lucide-icon name="x" [size]="18"></lucide-icon>
+        </button>
+      </div>
+      <div class="info-modal-body">
+        <p class="modal-info-goal">{{ modelInfo[modelInfoKey()!].goal }}</p>
+        <h4 class="modal-info-fields-title">What each field means</h4>
+        <div class="modal-info-fields">
+          <div class="modal-info-field" *ngFor="let f of modelInfo[modelInfoKey()!].fields">
+            <span class="modal-info-field-name">{{ f.name }}</span>
+            <span class="modal-info-field-desc">{{ f.desc }}</span>
+          </div>
+        </div>
+        <ng-container *ngIf="modelInfo[modelInfoKey()!].benchmarks">
+          <h4 class="modal-info-fields-title">How to read the results</h4>
+          <div class="modal-info-fields">
+            <div class="modal-info-benchmark" *ngFor="let b of modelInfo[modelInfoKey()!].benchmarks">
+              <span class="modal-info-field-name">{{ b.name }}</span>
+              <span class="modal-info-field-desc">{{ b.desc }}</span>
+              <span class="modal-info-example"><lucide-icon name="lightbulb" [size]="12"></lucide-icon> {{ b.example }}</span>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+
+    <!-- ── Price panel ── -->
+    <div *ngIf="selectedModel() === 'price'" class="catalog-panel">
+      <button nz-button nzType="default" class="panel-back" (click)="selectModel(null)"><span>←</span> Back to Models</button>
+      <h3 class="panel-title">Smart Event Pricing</h3>
+      <div class="nz-form-grid">
+        <div class="nz-field"><label class="nz-label">Price</label><nz-input-number [(ngModel)]="priceForm.price" [nzStep]="10" style="width:100%"></nz-input-number></div>
+        <div class="nz-field"><label class="nz-label">Budget</label><nz-input-number [(ngModel)]="priceForm.budget" [nzStep]="100" style="width:100%"></nz-input-number></div>
+        <div class="nz-field"><label class="nz-label">Marketing Spend</label><nz-input-number [(ngModel)]="priceForm.marketing_spend" [nzStep]="10" style="width:100%"></nz-input-number></div>
+        <div class="nz-field"><label class="nz-label">New Beneficiaries</label><nz-input-number [(ngModel)]="priceForm.new_beneficiaries" style="width:100%"></nz-input-number></div>
+        <div class="nz-field"><label class="nz-label">Reservations</label><nz-input-number [(ngModel)]="priceForm.reservations" style="width:100%"></nz-input-number></div>
+        <div class="nz-field"><label class="nz-label">Nb Events</label><nz-input-number [(ngModel)]="priceForm.nb_events" style="width:100%"></nz-input-number></div>
+        <div class="nz-field"><label class="nz-label">Avg Spent / User</label><nz-input-number [(ngModel)]="priceForm.avg_spent_user" [nzStep]="5" style="width:100%"></nz-input-number></div>
+        <div class="nz-field"><label class="nz-label">Type</label>
+          <nz-select [(ngModel)]="priceForm.type" style="width:100%">
+            <nz-option nzValue="Corporate Event" nzLabel="Corporate Event"></nz-option>
+            <nz-option nzValue="Private Party" nzLabel="Private Party"></nz-option>
+            <nz-option nzValue="Wedding" nzLabel="Wedding"></nz-option>
+          </nz-select>
+        </div>
+        <div class="nz-field"><label class="nz-label">Status</label>
+          <nz-select [(ngModel)]="priceForm.status" style="width:100%">
+            <nz-option nzValue="confirmed" nzLabel="Confirmed"></nz-option>
+            <nz-option nzValue="cancelled" nzLabel="Cancelled"></nz-option>
+            <nz-option nzValue="pending" nzLabel="Pending"></nz-option>
+          </nz-select>
+        </div>
+      </div>
+      <div class="panel-actions">
+        <button nz-button nzType="primary" (click)="runPricePredict()" [nzLoading]="priceLoading()">Estimate Price</button>
+      </div>
+      <p *ngIf="priceError()" class="panel-error">{{ priceError() }}</p>
+      <div *ngIf="priceResult()" class="price-result panel-result">
+        <span class="result-label">Suggested Final Price</span>
+        <span class="result-value">{{ priceResult()!.prediction | number:'1.2-2' }}</span>
+        <span class="result-meta">Based on your event details</span>
+      </div>
+    </div>
+
+    <!-- ── Fidelisation panel ── -->
+    <div *ngIf="selectedModel() === 'fidel'" class="catalog-panel">
+      <button nz-button nzType="default" class="panel-back" (click)="selectModel(null)"><span>←</span> Back to Models</button>
+      <h3 class="panel-title">Client Return Likelihood</h3>
+      <div class="nz-form-grid">
+        <div class="nz-field"><label class="nz-label">Price</label><nz-input-number [(ngModel)]="fidelForm.price" [nzStep]="10" style="width:100%"></nz-input-number></div>
+        <div class="nz-field"><label class="nz-label">Budget</label><nz-input-number [(ngModel)]="fidelForm.budget" [nzStep]="100" style="width:100%"></nz-input-number></div>
+        <div class="nz-field"><label class="nz-label">Final Price</label><nz-input-number [(ngModel)]="fidelForm.final_price" [nzStep]="10" style="width:100%"></nz-input-number></div>
+        <div class="nz-field"><label class="nz-label">Rating</label><nz-input-number [(ngModel)]="fidelForm.rating" [nzStep]="0.1" [nzMin]="0" [nzMax]="5" style="width:100%"></nz-input-number></div>
+        <div class="nz-field"><label class="nz-label">Visitors</label><nz-input-number [(ngModel)]="fidelForm.visitors" style="width:100%"></nz-input-number></div>
+        <div class="nz-field"><label class="nz-label">Marketing Spend</label><nz-input-number [(ngModel)]="fidelForm.marketing_spend" [nzStep]="10" style="width:100%"></nz-input-number></div>
+        <div class="nz-field"><label class="nz-label">Price / Budget Ratio</label><nz-input-number [(ngModel)]="fidelForm.price_budget_ratio" [nzStep]="0.01" style="width:100%"></nz-input-number></div>
+        <div class="nz-field"><label class="nz-label">Margin</label><nz-input-number [(ngModel)]="fidelForm.margin" style="width:100%"></nz-input-number></div>
+        <div class="nz-field"><label class="nz-label">Has Complaint</label>
+          <nz-select [(ngModel)]="fidelForm.has_complaint" style="width:100%">
+            <nz-option [nzValue]="0" nzLabel="No"></nz-option>
+            <nz-option [nzValue]="1" nzLabel="Yes"></nz-option>
+          </nz-select>
+        </div>
+        <div class="nz-field"><label class="nz-label">Event Type</label>
+          <nz-select [(ngModel)]="fidelForm.type_encoded" style="width:100%">
+            <nz-option [nzValue]="0" nzLabel="Corporate Event"></nz-option>
+            <nz-option [nzValue]="1" nzLabel="Private Party"></nz-option>
+            <nz-option [nzValue]="2" nzLabel="Wedding"></nz-option>
+            <nz-option [nzValue]="3" nzLabel="Unknown"></nz-option>
+          </nz-select>
+        </div>
+        <div class="nz-field"><label class="nz-label">Season</label>
+          <nz-select [(ngModel)]="fidelForm.season_encoded" style="width:100%">
+            <nz-option [nzValue]="0" nzLabel="Autumn"></nz-option>
+            <nz-option [nzValue]="1" nzLabel="Summer"></nz-option>
+            <nz-option [nzValue]="2" nzLabel="Winter"></nz-option>
+            <nz-option [nzValue]="3" nzLabel="Spring"></nz-option>
+          </nz-select>
+        </div>
+        <div class="nz-field"><label class="nz-label">Is Weekend</label>
+          <nz-select [(ngModel)]="fidelForm.is_weekend" style="width:100%">
+            <nz-option [nzValue]="0" nzLabel="No"></nz-option>
+            <nz-option [nzValue]="1" nzLabel="Yes"></nz-option>
+          </nz-select>
+        </div>
+        <div class="nz-field"><label class="nz-label">Month</label><nz-input-number [(ngModel)]="fidelForm.month" [nzMin]="1" [nzMax]="12" style="width:100%"></nz-input-number></div>
+      </div>
+      <div class="panel-actions">
+        <button nz-button nzType="primary" (click)="runFidelPredict()" [nzLoading]="fidelLoading()">Analyse</button>
+      </div>
+      <p *ngIf="fidelError()" class="panel-error">{{ fidelError() }}</p>
+      <div *ngIf="fidelResult()" class="fidel-result panel-result">
+        <span class="result-label">{{ fidelResult()!.label }}</span>
+        <span class="result-value">{{ (fidelResult()!.probabilite_fidelite * 100) | number:'1.1-1' }}%</span>
+        <span class="result-meta">Recommended action: {{ fidelResult()!.action_recommandee }}</span>
+        <div class="kpi-row" *ngIf="fidelResult()!.accuracy != null">
+          <div class="kpi-card"><span class="kpi-val">{{ (fidelResult()!.accuracy! * 100) | number:'1.1-1' }}%</span><span class="kpi-lbl">Correct Predictions</span></div>
+          <div class="kpi-card"><span class="kpi-val">{{ (fidelResult()!.recall! * 100) | number:'1.1-1' }}%</span><span class="kpi-lbl">Loyal Clients Found</span></div>
+          <div class="kpi-card"><span class="kpi-val">{{ (fidelResult()!.roc_auc! * 100) | number:'1.1-1' }}%</span><span class="kpi-lbl">Reliability Score</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Loyalty panel ── -->
+    <div *ngIf="selectedModel() === 'loyalty'" class="catalog-panel">
+      <button nz-button nzType="default" class="panel-back" (click)="selectModel(null)"><span>←</span> Back to Models</button>
+      <h3 class="panel-title">Client Loyalty Check</h3>
+      <div class="nz-form-grid">
+        <div class="nz-field"><label class="nz-label">Price</label><nz-input-number [(ngModel)]="loyaltyForm.price" [nzStep]="10" style="width:100%"></nz-input-number></div>
+        <div class="nz-field"><label class="nz-label">Budget</label><nz-input-number [(ngModel)]="loyaltyForm.budget" [nzStep]="100" style="width:100%"></nz-input-number></div>
+        <div class="nz-field"><label class="nz-label">Final Price</label><nz-input-number [(ngModel)]="loyaltyForm.final_price" [nzStep]="10" style="width:100%"></nz-input-number></div>
+        <div class="nz-field"><label class="nz-label">Rating</label><nz-input-number [(ngModel)]="loyaltyForm.rating" [nzStep]="0.1" [nzMin]="0" [nzMax]="5" style="width:100%"></nz-input-number></div>
+        <div class="nz-field"><label class="nz-label">Visitors</label><nz-input-number [(ngModel)]="loyaltyForm.visitors" style="width:100%"></nz-input-number></div>
+        <div class="nz-field"><label class="nz-label">Event Date</label><nz-date-picker [(ngModel)]="loyaltyForm.event_date" nzFormat="yyyy-MM-dd" style="width:100%"></nz-date-picker></div>
+        <div class="nz-field"><label class="nz-label">Event Type</label>
+          <nz-select [(ngModel)]="loyaltyForm.event_type" style="width:100%">
+            <nz-option nzValue="Corporate Event" nzLabel="Corporate Event"></nz-option>
+            <nz-option nzValue="Private Party" nzLabel="Private Party"></nz-option>
+            <nz-option nzValue="Wedding" nzLabel="Wedding"></nz-option>
+            <nz-option nzValue="inconnu" nzLabel="Unknown"></nz-option>
+          </nz-select>
+        </div>
+      </div>
+      <div class="panel-actions">
+        <button nz-button nzType="primary" (click)="runLoyaltyPredict()" [nzLoading]="loyaltyLoading()">Check</button>
+      </div>
+      <p *ngIf="loyaltyError()" class="panel-error">{{ loyaltyError() }}</p>
+      <div *ngIf="loyaltyResult()" class="loyalty-result panel-result">
+        <span class="result-label">{{ loyaltyResult()!.is_loyal ? 'Likely to return' : 'At risk of leaving' }}</span>
+        <span class="result-value">{{ (loyaltyResult()!.probability * 100) | number:'1.1-1' }}%</span>
+        <span class="result-meta">Confidence level</span>
+      </div>
+    </div>
+
+    <!-- ── Cluster panel ── -->
+    <div *ngIf="selectedModel() === 'cluster'" class="catalog-panel">
+      <button nz-button nzType="default" class="panel-back" (click)="selectModel(null)"><span>←</span> Back to Models</button>
+      <h3 class="panel-title">Event Profile Grouping</h3>
+      <div class="nz-form-grid">
+        <div class="nz-field"><label class="nz-label">Budget</label><nz-input-number [(ngModel)]="clusterForm.budget" [nzStep]="100" style="width:100%"></nz-input-number></div>
+        <div class="nz-field"><label class="nz-label">Price</label><nz-input-number [(ngModel)]="clusterForm.price" [nzStep]="10" style="width:100%"></nz-input-number></div>
+        <div class="nz-field"><label class="nz-label">Final Price</label><nz-input-number [(ngModel)]="clusterForm.final_price" [nzStep]="10" style="width:100%"></nz-input-number></div>
+        <div class="nz-field"><label class="nz-label">Rating</label><nz-input-number [(ngModel)]="clusterForm.rating" [nzStep]="0.1" [nzMin]="0" [nzMax]="5" style="width:100%"></nz-input-number></div>
+        <div class="nz-field"><label class="nz-label">Visitors</label><nz-input-number [(ngModel)]="clusterForm.visitors" style="width:100%"></nz-input-number></div>
+        <div class="nz-field"><label class="nz-label">Grouping Method</label>
+          <nz-select [(ngModel)]="clusterForm.algo" style="width:100%">
+            <nz-option nzValue="kmeans" nzLabel="Standard"></nz-option>
+            <nz-option nzValue="dbscan" nzLabel="Flexible"></nz-option>
+          </nz-select>
+        </div>
+        <div class="nz-field"><label class="nz-label">Event Type</label>
+          <nz-select [(ngModel)]="clusterForm.event_type" style="width:100%">
+            <nz-option nzValue="Corporate Event" nzLabel="Corporate Event"></nz-option>
+            <nz-option nzValue="Private Party" nzLabel="Private Party"></nz-option>
+            <nz-option nzValue="Wedding" nzLabel="Wedding"></nz-option>
+          </nz-select>
+        </div>
+        <div class="nz-field"><label class="nz-label">Reservation Status</label>
+          <nz-select [(ngModel)]="clusterForm.reservation_status" style="width:100%">
+            <nz-option nzValue="confirmed" nzLabel="Confirmed"></nz-option>
+            <nz-option nzValue="cancelled" nzLabel="Cancelled"></nz-option>
+            <nz-option nzValue="pending" nzLabel="Pending"></nz-option>
+          </nz-select>
+        </div>
+      </div>
+      <div class="panel-actions">
+        <button nz-button nzType="primary" (click)="runClusterPredict()" [nzLoading]="clusterLoading()">Group Events</button>
+      </div>
+      <p *ngIf="clusterError()" class="panel-error">{{ clusterError() }}</p>
+      <div *ngIf="clusterResult()" class="cluster-result panel-result">
+        <app-cluster-chart [data]="clusterResult()!"></app-cluster-chart>
+      </div>
+    </div>
+
+    <!-- ── Forecast panel ── -->
+    <div *ngIf="selectedModel() === 'forecast'" class="catalog-panel">
+      <button nz-button nzType="default" class="panel-back" (click)="selectModel(null)"><span>←</span> Back to Models</button>
+      <h3 class="panel-title">Booking Demand Forecast</h3>
+      <div class="nz-form-grid">
+        <div class="nz-field"><label class="nz-label">Category</label>
+          <nz-select [(ngModel)]="forecastForm.category_name" style="width:100%">
+            <nz-option *ngFor="let c of categories()" [nzValue]="c" [nzLabel]="c"></nz-option>
+          </nz-select>
+        </div>
+        <div class="nz-field"><label class="nz-label">Horizon (months)</label><nz-input-number [(ngModel)]="forecastForm.horizon" [nzMin]="1" [nzMax]="24" style="width:100%"></nz-input-number></div>
+      </div>
+      <div class="panel-actions">
+        <button nz-button nzType="primary" (click)="runForecast()" [nzLoading]="forecastLoading()">Run Forecast</button>
+      </div>
+      <p *ngIf="forecastError()" class="panel-error">{{ forecastError() }}</p>
+      <div *ngIf="forecastResult()" class="forecast-result panel-result">
+        <span class="result-label">Outlook — {{ forecastResult()!.category }}</span>
+        <div class="kpi-row">
+          <div class="kpi-card kpi-accent">
+            <span class="kpi-val">{{ forecastTotalReservations | number:'1.0-0' }}</span>
+            <span class="kpi-lbl">Est. Reservations</span>
+          </div>
+          <div class="kpi-card" *ngIf="forecastResult()!.metrics">
+            <span class="kpi-val">{{ forecastResult()!.metrics!.mape | number:'1.1-1' }}%</span>
+            <span class="kpi-lbl">Avg. Error Rate</span>
+          </div>
+          <div class="kpi-card" *ngIf="forecastResult()!.metrics">
+            <span class="kpi-val">{{ forecastResult()!.metrics!.mae | number:'1.1-1' }}</span>
+            <span class="kpi-lbl">Typical Miss</span>
+          </div>
+          <div class="kpi-card" *ngIf="forecastResult()!.metrics">
+            <span class="kpi-val">{{ forecastResult()!.metrics!.rmse | number:'1.1-1' }}</span>
+            <span class="kpi-lbl">Worst-Case Miss</span>
+          </div>
+        </div>
+        <app-forecast-chart [data]="forecastResult()!"></app-forecast-chart>
+        <span class="result-meta">{{ forecastResult()!.forecast.length }} months ahead</span>
+      </div>
+    </div>
+
+    <!-- ── Revenue Forecast panel (best model) ── -->
+    <div *ngIf="selectedModel() === 'revenue'" class="catalog-panel">
+      <button nz-button nzType="default" class="panel-back" (click)="selectModel(null)"><span>←</span> Back to Models</button>
+      <h3 class="panel-title">Revenue Outlook</h3>
+
+      <div class="horizon-selector">
+        <span class="horizon-label">Time period</span>
+        <div class="horizon-btns">
+          <button [class.active]="revenueHorizon() === 4"  (click)="revenueHorizon.set(4);  runRevenueForecast()">4 months</button>
+          <button [class.active]="revenueHorizon() === 6"  (click)="revenueHorizon.set(6);  runRevenueForecast()">6 months</button>
+          <button [class.active]="revenueHorizon() === 12" (click)="revenueHorizon.set(12); runRevenueForecast()">12 months</button>
+        </div>
+      </div>
+
+      <div *ngIf="revenueLoading()" class="rev-loading">
+        <div class="rev-spinner"></div>
+        <p>Loading revenue forecast…</p>
+      </div>
+
+      <p *ngIf="revenueError()" class="panel-error">{{ revenueError() }}</p>
+
+      <div *ngIf="revenueForecast() && !revenueLoading()" class="panel-result revenue-chart-result">
+        <div class="result-meta" *ngIf="revenueForecastData?.model">
+          Forecast method: {{ revenueForecastData!.model }}
+        </div>
+        <div class="kpi-row" style="margin-bottom:20px">
+          <div class="kpi-card kpi-accent">
+            <span class="kpi-val">{{ shortNumber(revenueNextMonth) }}</span>
+            <span class="kpi-lbl">Next Month</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-val">{{ shortNumber(revenueMonthlyAvg) }}</span>
+            <span class="kpi-lbl">Monthly Average</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-val">{{ shortNumber(revenueTotal) }}</span>
+            <span class="kpi-lbl">{{ revenueHorizon() }}-Month Total</span>
+          </div>
+        </div>
+        <app-forecast-chart [data]="revenueForecastData!"></app-forecast-chart>
+        <span class="result-meta">{{ revenueHorizon() }} months ahead</span>
+      </div>
+    </div>
+
+    <div *ngIf="selectedModel() === 'sentiment'" class="catalog-panel">
+      <button nz-button nzType="default" class="panel-back" (click)="selectModel(null)"><span>←</span> Back to Models</button>
+      <h3 class="panel-title">Client Feedback Tone</h3>
+      <div class="nz-form-grid nz-form-grid-full">
+        <div class="nz-field"><label class="nz-label">Review Text</label>
+          <textarea nz-input [(ngModel)]="sentimentText" [nzAutosize]="{ minRows: 3, maxRows: 6 }"></textarea>
+        </div>
+      </div>
+      <div class="panel-actions">
+        <button nz-button nzType="primary" (click)="runSentiment()" [nzLoading]="sentimentLoading()">Analyse Feedback</button>
+      </div>
+      <div *ngIf="sentimentResult()" class="sentiment-result panel-result">
+        <span class="result-label">{{ sentimentResult()!.label }}</span>
+        <span class="result-value">{{ sentimentResult()!.polarity | number:'1.2-2' }}</span>
+        <span class="result-meta">Polarity score</span>
+      </div>
+    </div>
+
+    <!-- ── Recommendation panel ── -->
+    <div *ngIf="selectedModel() === 'reco'" class="catalog-panel">
+      <button nz-button nzType="default" class="panel-back" (click)="selectModel(null)"><span>←</span> Back to Models</button>
+      <h3 class="panel-title">Personalized Event Suggestions</h3>
+      <div class="nz-form-grid">
+        <div class="nz-field"><label class="nz-label">Beneficiary ID</label><nz-input-number [(ngModel)]="recoBeneId" [nzMin]="1" style="width:100%"></nz-input-number></div>
+        <div class="nz-field"><label class="nz-label">Count</label><nz-input-number [(ngModel)]="recoCount" [nzMin]="1" [nzMax]="10" style="width:100%"></nz-input-number></div>
+      </div>
+      <div class="panel-actions">
+        <button nz-button nzType="primary" (click)="runReco()" [nzLoading]="recoLoading()">Get Suggestions</button>
+      </div>
+      <p *ngIf="recoError()" class="panel-error">{{ recoError() }}</p>
+      <div *ngIf="recoResult()" class="reco-result panel-result">
+        <span class="result-label">Recommended Events · {{ recoResult()!.type }}</span>
+        <table class="reco-table">
+          <thead><tr><th>#</th><th>Type</th><th>Title</th><th>Avg Rating</th><th>Score</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let item of recoResult()!.recommendations; let i = index">
+              <td>{{ i + 1 }}</td>
+              <td><span class="reco-badge">{{ item.event_type }}</span></td>
+              <td>{{ item.event_title || '—' }}</td>
+              <td>{{ item.avg_rating | number:'1.1-1' }} ★</td>
+              <td>{{ item.score | number:'1.3-3' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Anomaly panel ── -->
+    <div *ngIf="selectedModel() === 'anomaly'" class="catalog-panel">
+      <button nz-button nzType="default" class="panel-back" (click)="selectModel(null)"><span>←</span> Back to Models</button>
+      <h3 class="panel-title">Unusual Activity Alert</h3>
+      <div class="panel-actions">
+        <button nz-button nzType="primary" nzDanger (click)="runAnomalies()" [nzLoading]="anomalyLoading()">Scan Events</button>
+      </div>
+      <p *ngIf="anomalyError()" class="panel-error">{{ anomalyError() }}</p>
+      <div *ngIf="anomalyResult()" class="anomaly-result panel-result">
+        <span class="result-label">Unusual Events Found</span>
+        <span class="result-value">{{ anomalyResult()!.anomaly_count }} / {{ anomalyResult()!.total_count }}</span>
+        <span class="result-meta">Out of all events analysed</span>
+      </div>
+    </div>
+
+    <!-- ── Deep Learning panel ── -->
+    <div *ngIf="selectedModel() === 'dl'" class="catalog-panel">
+      <button nz-button nzType="default" class="panel-back" (click)="selectModel(null)"><span>←</span> Back to Models</button>
+      <h3 class="panel-title">Advanced Loyalty Predictor</h3>
+      <p class="panel-desc">Uses the same details as the Client Return Likelihood tool. Fill that form first if needed.</p>
+      <div class="panel-actions">
+        <button nz-button nzType="primary" (click)="runDL()" [nzLoading]="dlLoading()">Analyse</button>
+      </div>
+      <p *ngIf="dlError()" class="panel-error">{{ dlError() }}</p>
+      <div *ngIf="dlResult()" class="dl-result panel-result">
+        <span class="result-label">{{ dlResult()!.prediction === 1 ? 'Likely to return' : 'At risk of leaving' }}</span>
+        <span class="result-value">{{ (dlResult()!.confidence * 100) | number:'1.1-1' }}%</span>
+        <span class="result-meta">{{ dlResult()!.note }}</span>
+        <div class="kpi-row" *ngIf="dlResult()!.accuracy != null">
+          <div class="kpi-card"><span class="kpi-val">{{ (dlResult()!.accuracy! * 100) | number:'1.1-1' }}%</span><span class="kpi-lbl">Correct Predictions</span></div>
+          <div class="kpi-card"><span class="kpi-val">{{ (dlResult()!.f1_score! * 100) | number:'1.1-1' }}%</span><span class="kpi-lbl">Balanced Score</span></div>
+          <div class="kpi-card"><span class="kpi-val">{{ (dlResult()!.auc! * 100) | number:'1.1-1' }}%</span><span class="kpi-lbl">Reliability Score</span></div>
+          <div class="kpi-card"><span class="kpi-val">{{ dlResult()!.iterations }}</span><span class="kpi-lbl">Training Cycles</span></div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+</ng-container>
+
+<!-- ══════════════════════════════════════════════════════════════════ ABOUT -->
+<ng-container *ngIf="activeSection() === 'about'">
+  <section class="section-page">
+    <div class="section-header">
+      <span class="section-label">About</span>
+      <h2 class="section-title">What is EventZella?</h2>
+      <p class="section-desc">A smart analytics platform designed to help event businesses make better decisions.</p>
+    </div>
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-icon" style="background:rgba(56,139,253,0.1);color:#388bfd"><lucide-icon name="bar-chart-2" [size]="22"></lucide-icon></div>
+        <h3 class="card-title">Real-time Dashboards</h3>
+        <p class="card-desc">Power BI embedded reports with live KPIs, booking trends, and revenue analytics.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon" style="background:rgba(163,113,247,0.1);color:#a371f7"><lucide-icon name="brain" [size]="22"></lucide-icon></div>
+        <h3 class="card-title">10 Decision Tools</h3>
+        <p class="card-desc">Smart pricing, client loyalty analysis, event grouping, demand forecasting, revenue outlook, feedback analysis, recommendations, and more.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon" style="background:rgba(63,185,80,0.1);color:#3fb950"><lucide-icon name="zap" [size]="22"></lucide-icon></div>
+        <h3 class="card-title">Smart Assistant</h3>
+        <p class="card-desc">An intelligent chatbot that answers your questions about event data instantly.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon" style="background:rgba(251,191,36,0.1);color:#fbbf24"><lucide-icon name="shield" [size]="22"></lucide-icon></div>
+        <h3 class="card-title">Role-based Access</h3>
+        <p class="card-desc">Each team sees only the tools relevant to their role. Secure and simple sign-in.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon" style="background:rgba(247,120,186,0.1);color:#f778ba"><lucide-icon name="rocket" [size]="22"></lucide-icon></div>
+        <h3 class="card-title">Modern &amp; Reliable</h3>
+        <p class="card-desc">Built with cutting-edge technology for speed, reliability, and a smooth user experience.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon" style="background:rgba(56,139,253,0.1);color:#388bfd"><lucide-icon name="award" [size]="22"></lucide-icon></div>
+        <h3 class="card-title">Esprit PABI Project</h3>
+        <p class="card-desc">Built by the 4ERP BI6 team (2025–26) as a capstone business intelligence project.</p>
+      </div>
+    </div>
+  </section>
+</ng-container>
+
+</div>

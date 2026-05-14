@@ -1,0 +1,123 @@
+<header class="header-nav">
+  <div class="header-inner">
+    <a class="logo" (click)="navigate('overview')" style="cursor:pointer" aria-label="EventZella Home">
+      <img *ngIf="theme.theme() === 'dark'" src="logo-removebg-preview.png" alt="EventZella Logo" style="height:40px;width:auto;object-fit:contain;display:block;" />
+      <span *ngIf="theme.theme() !== 'dark'" style="font-size:1.2rem;font-weight:700;letter-spacing:0.01em;">EventZella</span>
+    </a>
+    <nav class="nav-links" aria-label="Main navigation">
+      <a class="nav-link" (click)="navigate('overview')">
+        <lucide-icon name="home" [size]="18"></lucide-icon>
+        <span>Overview</span>
+      </a>
+      <a *ngIf="auth.isLoggedIn()" class="nav-link" (click)="navigate('dashboards')">
+        <lucide-icon name="layout-dashboard" [size]="18"></lucide-icon>
+        <span>Dashboards</span>
+      </a>
+      <a *ngIf="auth.isLoggedIn()" class="nav-link" (click)="navigate('lab')">
+        <lucide-icon name="flask-conical" [size]="18"></lucide-icon>
+        <span>Tools</span>
+      </a>
+      <a class="nav-link" (click)="navigate('about')">
+        <lucide-icon name="info" [size]="18"></lucide-icon>
+        <span>About</span>
+      </a>
+    </nav>
+    <div class="header-actions">
+      <button class="theme-toggle" (click)="theme.toggle()" aria-label="Toggle theme">
+        <lucide-icon [name]="theme.theme() === 'dark' ? 'sun' : 'moon'" [size]="18"></lucide-icon>
+        <span class="theme-toggle-text">Theme</span>
+      </button>
+      <button *ngIf="!auth.isLoggedIn()" class="btn-signin" (click)="openModal()">
+        <lucide-icon name="log-in" [size]="18"></lucide-icon>
+        <span>Sign In</span>
+      </button>
+      <ng-container *ngIf="auth.isLoggedIn()">
+        <button class="btn-alerts" [class.has-unread]="unreadAlertCount() > 0" (click)="toggleAlertsModal()" aria-label="Pipeline alerts" title="Pipeline notifications">
+          <lucide-icon name="bell" [size]="18"></lucide-icon>
+          <span>Alerts</span>
+          <span class="alerts-badge" *ngIf="unreadAlertCount() > 0">{{ unreadAlertCount() }}</span>
+        </button>
+        <div class="user-badge">{{ auth.userEmail() }}</div>
+        <button class="btn-signout" (click)="auth.signOut()">
+          <lucide-icon name="log-out" [size]="18"></lucide-icon>
+          <span>Sign Out</span>
+        </button>
+      </ng-container>
+      <button class="hamburger" (click)="menuOpen.set(!menuOpen())" aria-label="Toggle menu" [attr.aria-expanded]="menuOpen()">
+        <lucide-icon [name]="menuOpen() ? 'x' : 'menu'" [size]="20"></lucide-icon>
+      </button>
+    </div>
+  </div>
+  <nav class="mobile-nav" [class.open]="menuOpen()" (click)="menuOpen.set(false)" aria-label="Mobile navigation">
+    <a class="nav-link" (click)="navigate('overview')">
+      <lucide-icon name="home" [size]="18"></lucide-icon>
+      <span>Overview</span>
+    </a>
+    <a *ngIf="auth.isLoggedIn()" class="nav-link" (click)="navigate('dashboards')">
+      <lucide-icon name="layout-dashboard" [size]="18"></lucide-icon>
+      <span>Dashboards</span>
+    </a>
+    <a *ngIf="auth.isLoggedIn()" class="nav-link" (click)="navigate('lab')">
+      <lucide-icon name="flask-conical" [size]="18"></lucide-icon>
+      <span>Tools</span>
+    </a>
+    <a class="nav-link" (click)="navigate('about')">
+      <lucide-icon name="info" [size]="18"></lucide-icon>
+      <span>About</span>
+    </a>
+  </nav>
+</header>
+<div class="modal-backdrop" *ngIf="showModal()" (click)="closeModal()"></div>
+<div class="modal" *ngIf="showModal()" role="dialog" aria-labelledby="modal-title" aria-modal="true">
+  <div class="modal-header">
+    <span id="modal-title">Sign In</span>
+    <button (click)="closeModal()" aria-label="Close modal">
+      <lucide-icon name="x" [size]="20"></lucide-icon>
+    </button>
+  </div>
+  <div class="modal-body">
+    <label for="email">Email</label>
+    <input id="email" type="email" [value]="email()" (input)="email.set($any($event.target).value)" (keydown)="onKeydown($event)" autocomplete="email"/>
+    <label for="password">Password</label>
+    <input id="password" type="password" [value]="password()" (input)="password.set($any($event.target).value)" (keydown)="onKeydown($event)" autocomplete="current-password"/>
+    <p *ngIf="loginError()" class="login-error" role="alert">{{ loginError() }}</p>
+    <button (click)="submit()" class="btn-login">Sign In</button>
+  </div>
+</div>
+
+<!-- Alerts Modal -->
+<div class="modal-backdrop" *ngIf="showAlertsModal()" (click)="closeAlertsModal()"></div>
+<div class="modal alerts-modal" *ngIf="showAlertsModal()" role="dialog" aria-labelledby="alerts-modal-title" aria-modal="true">
+  <div class="modal-header">
+    <div class="alerts-modal-title">
+      <lucide-icon name="bell" [size]="20"></lucide-icon>
+      <span id="alerts-modal-title">Pipeline Alerts</span>
+      <span class="alerts-count-badge" *ngIf="unreadAlertCount() > 0">{{ unreadAlertCount() }} new</span>
+    </div>
+    <button (click)="closeAlertsModal()" aria-label="Close alerts">
+      <lucide-icon name="x" [size]="20"></lucide-icon>
+    </button>
+  </div>
+  <div class="alerts-modal-body">
+    <div *ngIf="alertsLoading()" class="alerts-center">Loading alerts...</div>
+    <div *ngIf="!alertsLoading() && alerts().length === 0" class="alerts-center" style="gap:12px;">
+      <lucide-icon name="check-circle" [size]="32" style="color:#3fb950"></lucide-icon>
+      <span>All pipelines running smoothly.</span>
+    </div>
+    <div *ngFor="let alert of alerts()" class="alert-row" [class.alert-unread]="!alert.is_read" (click)="markAlertRead(alert)">
+      <span class="alert-row-icon">{{ alertIcon(alert.severity) }}</span>
+      <div class="alert-row-body">
+        <div class="alert-row-title">{{ alert.title }}</div>
+        <div class="alert-row-msg">{{ alert.message }}</div>
+        <div class="alert-row-meta">{{ alert.pipeline }} · {{ alert.created_at | date:'short' }}</div>
+      </div>
+      <span class="alert-row-dot" *ngIf="!alert.is_read"></span>
+    </div>
+  </div>
+  <div class="alerts-modal-footer">
+    <button class="btn-alerts-refresh" (click)="loadAlerts()">
+      <lucide-icon name="refresh-cw" [size]="16"></lucide-icon>
+      <span>Refresh</span>
+    </button>
+  </div>
+</div>

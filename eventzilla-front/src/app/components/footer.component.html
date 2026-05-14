@@ -1,0 +1,59 @@
+<footer class="site-footer">
+  <div class="footer-inner">
+
+    <!-- Brand column -->
+    <div class="footer-brand">
+      <a class="footer-logo" (click)="navigate('overview')" style="cursor:pointer">
+        <div class="footer-logo-icon">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+            <path d="M3 8h10M8 3v10" stroke="#388bfd" stroke-width="2.2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <span>EventZella</span>
+      </a>
+      <p class="footer-tagline">
+        Turn your event data into<br>unstoppable growth.
+      </p>
+      <p class="footer-copy">&copy; {{ year }} EventZella. All rights reserved.</p>
+    </div>
+
+    <!-- Platform links -->
+    <div class="footer-col">
+      <h4 class="footer-col-title">Platform</h4>
+      <nav class="footer-nav">
+        <a class="footer-link" (click)="navigate('overview')"   style="cursor:pointer">Overview</a>
+        <a class="footer-link" (click)="navigate('dashboards')" style="cursor:pointer">Dashboards</a>
+        <a class="footer-link" (click)="navigate('lab')"        style="cursor:pointer">Decision Tools</a>
+        <a class="footer-link" (click)="navigate('about')"      style="cursor:pointer">About</a>
+      </nav>
+    </div>
+
+    <!-- Resources links -->
+    <div class="footer-col">
+      <h4 class="footer-col-title">Resources</h4>
+      <nav class="footer-nav">
+        <a href="#" class="footer-link">Documentation</a>
+        <a href="#" class="footer-link">API Reference</a>
+        <a href="#" class="footer-link">Changelog</a>
+        <a href="#" class="footer-link">Status</a>
+      </nav>
+    </div>
+
+    <!-- Legal links -->
+    <div class="footer-col">
+      <h4 class="footer-col-title">Legal</h4>
+      <nav class="footer-nav">
+        <a href="#" class="footer-link">Privacy Policy</a>
+        <a href="#" class="footer-link">Terms of Service</a>
+        <a href="#" class="footer-link">Contact</a>
+      </nav>
+    </div>
+
+  </div>
+
+  <div class="footer-bottom">
+    <span>&copy; {{ year }} EventZella. All rights reserved.</span>
+    <span class="footer-dot">·</span>
+    <span>Esprit PABI 4ERP BI6 2025–26</span>
+  </div>
+</footer>
