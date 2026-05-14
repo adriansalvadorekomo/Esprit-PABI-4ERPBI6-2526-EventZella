@@ -61,13 +61,8 @@ def get_season(month):
     else: return 'automne'
 
 def get_engine():
-    import os
-    host = os.getenv("FLASK_APP_DB_HOST", "localhost")
-    port = os.getenv("FLASK_APP_DB_PORT", "5432")
-    name = os.getenv("FLASK_APP_DB_NAME", "DW_event")
-    user = os.getenv("FLASK_APP_DB_USER", "postgres")
-    password = os.getenv("FLASK_APP_DB_PASSWORD", "1400")
-    return create_engine(f"postgresql://{user}:{password}@{host}:{port}/{name}")
+    from settings import DATABASE_URL
+    return create_engine(DATABASE_URL)
 
 def load_cluster_metrics():
     global cluster_metrics
@@ -81,7 +76,7 @@ def load_cluster_metrics():
     FROM fact_suivi_event f
     LEFT JOIN dim_event e ON f.event_sk = e.event_sk
     LEFT JOIN dim_reservation r ON f.reservation_sk = r.reservation_sk
-    LEFT JOIN "dim_complaint" c ON f.id_complaint = c.id_complaint
+    LEFT JOIN dim_complaint c ON f.id_complaint = c.id_complaint
     """
 
     engine = get_engine()
@@ -248,18 +243,13 @@ def predict_cluster():
             cluster_ids = kmeans.predict(X_pca).tolist()
         
         # --- CONSTRUCTION DE LA RÉPONSE COMPLÈTE ---
-        metrics = load_cluster_metrics().get(algo, {})
         results = []
         for c_id in cluster_ids:
             results.append({
                 'cluster_id': c_id, 
                 'cluster_name': cluster_names.get(c_id, "Inconnu"),
-                'algorithm': algo,      # Ajouté pour Google Sheets
-                'status': 'success',     # Ajouté pour Google Sheets
-                'silhouette_score': metrics.get('silhouette_score'),
-                'davies_bouldin_score': metrics.get('davies_bouldin_score'),
-                'n_clusters_detected': metrics.get('n_clusters_detected'),
-                'noise_points': metrics.get('noise_points', 0),
+                'algorithm': algo,
+                'status': 'success',
             })
         
         # Si n8n a envoyé une liste, on renvoie la liste complète
@@ -271,6 +261,31 @@ def predict_cluster():
             'status': 'error',
             'algorithm': 'unknown'
         }), 500
+
+# ============================================================
+# ROUTE ENTRAÎNEMENT (appelé par n8n avant prédiction)
+# ============================================================
+@app.route('/train-models', methods=['POST'])
+def train_models():
+    global kmeans, dbscan, rf_loyalty, scaler, pca, freq_map, cluster_names, cluster_metrics
+    try:
+        kmeans = joblib.load('kmeans_model.joblib')
+        dbscan = joblib.load('dbscan_model.joblib')
+        rf_loyalty = joblib.load('loyalty_model.joblib')
+        scaler = joblib.load('scaler.joblib')
+        pca = joblib.load('pca.joblib')
+        try:
+            freq_map = joblib.load('freq_map.joblib')
+        except:
+            freq_map = {}
+        try:
+            cluster_names = joblib.load('cluster_names.joblib')
+        except:
+            cluster_names = {0: "Client Premium", 1: "Client Potentiel", 2: "Client à Risque", -1: "Inclassable"}
+        cluster_metrics = None  # sera recalculé au prochain appel
+        return jsonify({'status': 'success', 'message': 'Models reloaded successfully'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

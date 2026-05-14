@@ -57,6 +57,7 @@ export interface ForecastResponse {
   status: string;
   category?: string;
   model?: string;
+  best_model?: string;
   history?: Array<{
     date: string;
     value: number;
@@ -85,17 +86,19 @@ export interface SentimentResponse {
   label: string;
 }
 
-export interface RecommendationRequest {
-  beneficiary_id: number;
-  n_reco?: number;
+export interface RecommendationItem {
+  event_sk: number;
+  event_type: string;
+  event_title: string | null;
+  avg_rating: number | null;
+  score: number;
 }
 
 export interface RecommendationResponse {
   status: string;
   beneficiary_id?: number;
-  recommendations: number[];
+  recommendations: RecommendationItem[];
   type: string;
-  scores?: number[];
 }
 
 export interface AnomalyRecord {
@@ -159,6 +162,17 @@ export interface ClusterRequest {
   event_type: 'Corporate Event' | 'Private Party' | 'Wedding';
   reservation_status: 'confirmed' | 'cancelled' | 'pending';
   algo?: 'kmeans' | 'dbscan';
+}
+
+export interface N8nAlert {
+  id: number;
+  pipeline: string;
+  severity: string;
+  title: string;
+  message: string;
+  details: Record<string, unknown>;
+  created_at: string;
+  is_read: boolean;
 }
 
 export interface ClusterResponse {
