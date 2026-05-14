@@ -1,0 +1,60 @@
+{
+  "title": "API Performance",
+  "uid": "api-performance",
+  "tags": ["eventzilla", "api", "monitoring"],
+  "timezone": "browser",
+  "editable": true,
+  "panels": [
+    {
+      "title": "Requests / sec",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [ { "color": "green", "value": null } ] } } },
+      "targets": [{ "expr": "sum(rate(http_requests_total{job='fastapi'}[1m]))", "legendFormat": "Req/s" }]
+    },
+    {
+      "title": "Error Rate",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [ { "color": "green", "value": null }, { "color": "orange", "value": 0.05 }, { "color": "red", "value": 0.1 } ] }, "unit": "percentunit" } },
+      "targets": [{ "expr": "sum(rate(http_requests_total{job='fastapi',status=~'5..'}[1m])) / sum(rate(http_requests_total{job='fastapi'}[1m]))", "legendFormat": "Error %" }]
+    },
+    {
+      "title": "P95 Latency",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [ { "color": "green", "value": null }, { "color": "orange", "value": 0.5 }, { "color": "red", "value": 1 } ] }, "unit": "s" } },
+      "targets": [{ "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job='fastapi'}[5m])) by (le))", "legendFormat": "p95" }]
+    },
+    {
+      "title": "Request Rate by Endpoint",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 4 },
+      "targets": [{ "expr": "sum(rate(http_requests_total{job='fastapi'}[1m])) by (path)", "legendFormat": "{{path}}" }]
+    },
+    {
+      "title": "Latency Distribution (p50, p90, p99)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 4, "x": 8, "y": 4 },
+      "targets": [
+        { "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{job='fastapi'}[5m])) by (le))", "legendFormat": "p50" },
+        { "expr": "histogram_quantile(0.90, sum(rate(http_request_duration_seconds_bucket{job='fastapi'}[5m])) by (le))", "legendFormat": "p90" },
+        { "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job='fastapi'}[5m])) by (le))", "legendFormat": "p99" }
+      ]
+    },
+    {
+      "title": "HTTP Status Code Breakdown",
+      "type": "piechart",
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 12 },
+      "fieldConfig": { "defaults": { "custom": { "displayMode": "auto" } } },
+      "targets": [{ "expr": "sum(rate(http_requests_total{job='fastapi'}[5m])) by (status)", "legendFormat": "{{status}}" }]
+    },
+    {
+      "title": "Requests by Method",
+      "type": "piechart",
+      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 12 },
+      "targets": [{ "expr": "sum(rate(http_requests_total{job='fastapi'}[5m])) by (method)", "legendFormat": "{{method}}" }]
+    }
+  ],
+  "schemaVersion": 39
+}

@@ -135,6 +135,100 @@ class MLService:
             "output": result.stdout,
         }
 
+    def train_sarima(self) -> dict:
+        try:
+            result = subprocess.run(
+                ["python", "train_ts.py"],
+                cwd=self.settings.backend_dir,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            return {"status": "success", "model": "SARIMA", "output": result.stdout}
+        except subprocess.CalledProcessError as exc:
+            raise HTTPException(
+                status_code=500,
+                detail={"message": "SARIMA training failed", "details": exc.stderr},
+            ) from exc
+
+    def train_prophet(self) -> dict:
+        try:
+            # MLflow setup for Prophet
+            mlflow.set_tracking_uri("file:./mlruns")
+            mlflow.set_experiment("prophet_final_price_forecast") # Ensure this experiment name is consistent or unique if needed
+
+            result = subprocess.run(
+                ["python", "train_prophet.py"],
+                cwd=self.settings.backend_dir,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            # Assuming train_prophet.py now logs metrics/artifacts to MLflow
+            # We could parse stdout for specific metrics if needed, but external script logging is better.
+            return {"status": "success", "model": "Prophet", "output": result.stdout}
+        except subprocess.CalledProcessError as exc:
+            # Log stderr for detailed debugging
+            error_details = exc.stderr
+            raise HTTPException(
+                status_code=500,
+                detail={"message": "Prophet training failed", "details": error_details},
+            ) from exc
+        except Exception as e:
+            # Catch any other unexpected errors during script execution
+            raise HTTPException(
+                status_code=500,
+                detail={"message": "An unexpected error occurred during Prophet training", "details": str(e)},
+            ) from e
+
+    def train_lstm(self) -> dict:
+        try:
+            result = subprocess.run(
+                ["python", "train_lstm_simple.py"],
+                cwd=self.settings.backend_dir,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            return {"status": "success", "model": "LSTM (MLP Proxy)", "output": result.stdout}
+        except subprocess.CalledProcessError as exc:
+            raise HTTPException(
+                status_code=500,
+                detail={"message": "LSTM training failed", "details": exc.stderr},
+            ) from exc
+
+    def train_loyalty(self) -> dict:
+        try:
+            # Note: app2.py seems to be the legacy location for loyalty training based on train_fidelisation
+            # but usually there is a dedicated script. Let's check if there's a train_loyalty.py or use app2.py
+            result = self.train_fidelisation()
+            return {"status": "success", "model": "Loyalty (Random Forest)", "results": result}
+        except Exception as exc:
+            raise HTTPException(
+                status_code=500,
+                detail={"message": "Loyalty training failed", "details": str(exc)},
+            ) from exc
+
+    def compare_models(self) -> dict:
+        try:
+            result = subprocess.run(
+                ["python", "compare_models.py"],
+                cwd=self.settings.backend_dir,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            import json
+            # The script prints the JSON as the last line
+            lines = result.stdout.strip().split("\n")
+            json_res = json.loads(lines[-1])
+            return {"status": "success", "results": json_res}
+        except Exception as exc:
+            raise HTTPException(
+                status_code=500,
+                detail={"message": "Model comparison failed", "details": str(exc)},
+            ) from exc
+
     def train_fidelisation(self) -> dict:
         script_path = self.settings.backend_dir / "app2.py"
         if not script_path.exists():

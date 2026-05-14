@@ -11,8 +11,13 @@ uvicorn
 xgboost
 imbalanced-learn
 Flask
+flask-cors
 statsmodels
 
 pmdarima
 scipy
 matplotlib
+python-dotenv
+groq
+prometheus-fastapi-instrumentator
+prophet
