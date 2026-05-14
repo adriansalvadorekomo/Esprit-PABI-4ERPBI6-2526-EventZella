@@ -8,7 +8,8 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 COPY backend/requirements.txt /app/requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
 COPY backend /app
 
@@ -16,3 +17,4 @@ ENV PYTHONUNBUFFERED=1
 
 EXPOSE 8000
 EXPOSE 5000
+EXPOSE 5001
