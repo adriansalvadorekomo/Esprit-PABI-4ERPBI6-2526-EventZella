@@ -1,21 +1,49 @@
 {
   "title": "Business KPIs",
   "uid": "business-kpis",
+  "tags": ["eventzilla", "business", "kpi"],
+  "timezone": "browser",
+  "editable": true,
   "panels": [
     {
-      "title": "Total Predictions",
+      "title": "Total API Calls (24h)",
       "type": "stat",
-      "targets": [{ "expr": "increase(http_requests_total{job='fastapi'}[24h])", "legendFormat": "Total" }]
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [ { "color": "blue", "value": null } ] } } },
+      "targets": [{ "expr": "sum(increase(http_requests_total{job='fastapi'}[24h]))", "legendFormat": "Total" }]
+    },
+    {
+      "title": "Active Users (estimated)",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [ { "color": "green", "value": null }, { "color": "orange", "value": 10 }, { "color": "red", "value": 50 } ] } } },
+      "targets": [{ "expr": "sum(rate(http_requests_total{job='fastapi'}[5m]))", "legendFormat": "Active" }]
+    },
+    {
+      "title": "Avg Response Time",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [ { "color": "green", "value": null }, { "color": "orange", "value": 0.3 }, { "color": "red", "value": 1 } ] }, "unit": "s" } },
+      "targets": [{ "expr": "rate(http_request_duration_seconds_sum{job='fastapi'}[5m]) / rate(http_request_duration_seconds_count{job='fastapi'}[5m])", "legendFormat": "Avg" }]
+    },
+    {
+      "title": "API Traffic Overview",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "targets": [{ "expr": "sum(rate(http_requests_total{job='fastapi'}[1m]))", "legendFormat": "Requests/s" }]
     },
     {
       "title": "Requests by Endpoint",
-      "type": "piechart",
-      "targets": [{ "expr": "sum by (path) (rate(http_requests_total{job='fastapi'}[1h]))", "legendFormat": "{{path}}" }]
+      "type": "bargauge",
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 12 },
+      "fieldConfig": { "defaults": { "displayName": "Rate" } },
+      "targets": [{ "expr": "topk(10, sum(rate(http_requests_total{job='fastapi'}[1h])) by (path))", "legendFormat": "{{path}}" }]
     },
     {
-      "title": "Active Users",
-      "type": "timeseries",
-      "targets": [{ "expr": "sum(rate(http_requests_total{job='fastapi'}[5m]))", "legendFormat": "Requests/s" }]
+      "title": "Error Distribution by Status",
+      "type": "piechart",
+      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 12 },
+      "targets": [{ "expr": "sum(rate(http_requests_total{job='fastapi'}[1h])) by (status)", "legendFormat": "{{status}}" }]
     }
   ],
   "schemaVersion": 39
