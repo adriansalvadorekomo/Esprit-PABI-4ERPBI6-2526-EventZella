@@ -36,3 +36,6 @@ backend/mlflow.db
 # OS
 .DS_Store
 Thumbs.db
+
+# Temp files
+-w
