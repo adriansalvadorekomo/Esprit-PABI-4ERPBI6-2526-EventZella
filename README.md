@@ -164,15 +164,15 @@ Transforms the data warehouse into star schemas for analytical consumption. Sub-
 | `SAcategory_service` | Category-service bridge |
 
 Both jobs and their metadata are located in:
-- `jobs/job_master_dw_0.1/` — DW job artifacts
-- `jobs/job_master_sa_0.1/` — SA job artifacts
-- `dags/AUTOMATIZATION/` — Talend project files
+- `etl/talend/job_master_dw_0.1/` — DW job artifacts
+- `etl/talend/job_master_sa_0.1/` — SA job artifacts
+- `etl/airflow/AUTOMATIZATION/` — Talend project files
 
 ---
 
 ## Apache Airflow — DAG Scheduling
 
-Apache Airflow orchestrates the execution of Talend jobs on a scheduled cadence. The DAGs are located in the `dags/` directory and handle:
+Apache Airflow orchestrates the execution of Talend jobs on a scheduled cadence. The DAGs are located in the `etl/airflow/` directory and handle:
 
 - Triggering `job_master_dw` for daily warehouse refreshes
 - Triggering `job_master_sa` for star-schema updates
@@ -188,11 +188,11 @@ Five **n8n workflow** files automate the ML lifecycle:
 
 | File | Pipeline |
 |---|---|
-| `n8n_workflow_price_prediction.json` | Scheduled price model training → inference → DB storage |
-| `n8n_workflow_loyalty_prediction.json` | Loyalty scoring with CSV export + email campaigns |
-| `n8n_workflow_kmeans_clustering.json` | KMeans clustering with Google Sheets export |
-| `n8n_workflow_dbscan_clustering.json` | DBSCAN clustering with Google Sheets export |
-| `n8n_workflow_unified_pipeline.json` | **Single merged workflow** — runs all 4 pipelines in parallel |
+| `etl/n8n/n8n_workflow_price_prediction.json` | Scheduled price model training → inference → DB storage |
+| `etl/n8n/n8n_workflow_loyalty_prediction.json` | Loyalty scoring with CSV export + email campaigns |
+| `etl/n8n/n8n_workflow_kmeans_clustering.json` | KMeans clustering with Google Sheets export |
+| `etl/n8n/n8n_workflow_dbscan_clustering.json` | DBSCAN clustering with Google Sheets export |
+| `etl/n8n/n8n_workflow_unified_pipeline.json` | **Single merged workflow** — runs all 4 pipelines in parallel |
 
 Import any workflow into n8n at `http://localhost:5678`.
 
@@ -256,42 +256,48 @@ uvicorn api.main:app --reload --port 8000
 ## Project Structure
 
 ```
-├── backend/                    # FastAPI + Flask ML backend
-│   ├── api/                    # FastAPI routes and models
-│   ├── eventzilla_api/         # SQL queries and business logic
-│   ├── models/                 # Trained ML models (.pkl, .joblib)
-│   ├── app.py / app2.py        # Flask entry points
-│   ├── main.py                 # Alternative backend entry point
-│   ├── train*.py               # Training scripts
+├── backend/                       # FastAPI + Flask ML backend
+│   ├── api/                       # FastAPI routes and models
+│   ├── eventzilla_api/            # SQL queries and business logic
+│   ├── models/                    # Trained ML models (.pkl, .joblib)
+│   ├── app.py / app2.py           # Flask entry points
+│   ├── main.py                    # Alternative backend entry point
+│   ├── train*.py                  # Training scripts
 │   └── requirements.txt
 │
-├── eventzilla-front/           # Angular 20 frontend
+├── eventzilla-front/              # Angular 20 frontend
 │   └── src/app/
-│       ├── components/         # Header, footer, chatbot, charts
-│       ├── pages/home/         # Main dashboard page
-│       ├── services/           # API, auth, theme services
-│       └── models/             # TypeScript interfaces
+│       ├── components/            # Header, footer, chatbot, charts
+│       ├── pages/home/            # Main dashboard page
+│       ├── services/              # API, auth, theme services
+│       └── models/                # TypeScript interfaces
 │
-├── dags/
-│   └── AUTOMATIZATION/         # Talend project + Airflow scheduling
-│       ├── process/SA/         # Star Schema Talend jobs
-│       └── metadata/           # Connection metadata
+├── etl/
+│   ├── n8n/                       # n8n workflow exports
+│   ├── airflow/                   # Airflow DAGs + Talend project files
+│   │   └── AUTOMATIZATION/
+│   │       ├── process/SA/        # Star Schema Talend jobs
+│   │       └── metadata/          # Connection metadata
+│   └── talend/
+│       ├── job_master_dw_0.1/     # Data Warehouse Talend job
+│       └── job_master_sa_0.1/     # Star Schema Talend job
 │
-├── jobs/
-│   ├── job_master_dw_0.1/      # Data Warehouse Talend job
-│   └── job_master_sa_0.1/      # Star Schema Talend job
+├── ml/
+│   ├── forecasting/               # Time-series forecasting scripts
+│   ├── models/                    # Additional model artifacts
+│   └── notebooks/                 # Exploratory data analysis notebooks
 │
-├── data/                       # Data files
-├── docker/                     # Docker config files (Prometheus, n8n)
-├── models/                     # Additional model artifacts
-├── scripts/                    # Utility scripts
-├── eda/                        # Exploratory data analysis notebooks
-├── forecasting/                # Time-series forecasting scripts
+├── docs/                          # Documentation
+├── data/                          # Data files
+├── docker/                        # Docker config files (Prometheus, Grafana)
+├── scripts/                       # Utility & health-check scripts
 │
-├── n8n_workflow_*.json         # n8n workflow exports
-├── docker-compose.yml          # Full stack orchestration
-├── backend.Dockerfile          # Backend image
-└── frontend.Dockerfile         # Frontend image (Nginx)
+├── docker-compose.yml             # Full stack orchestration
+├── backend.Dockerfile             # Backend image
+├── frontend.Dockerfile            # Frontend image (Nginx)
+├── ngrok.yml                      # ngrok tunnel configuration
+├── start.bat                      # One-click launcher
+└── start-backend.bat              # Backend development launcher
 ```
 
 ---
