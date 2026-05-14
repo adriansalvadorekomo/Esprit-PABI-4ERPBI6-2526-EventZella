@@ -27,6 +27,7 @@ docker/postgres-init/init.sql
 *.log
 *.out.log
 *.err.log
+/logs
 
 # Test / temp
 backend/test_chatbot_roles.py
@@ -35,3 +36,6 @@ backend/mlflow.db
 # OS
 .DS_Store
 Thumbs.db
+
+# Temp files
+-w

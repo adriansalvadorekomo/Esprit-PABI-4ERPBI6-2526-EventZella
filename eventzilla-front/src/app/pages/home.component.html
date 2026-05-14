@@ -207,14 +207,14 @@
 <ng-container *ngIf="activeSection() === 'lab'">
   <section class="section-page">
     <div class="section-header">
-      <span class="section-label">AI &amp; ML</span>
-      <h2 class="section-title">Lab</h2>
-      <p class="section-desc">Run predictions, forecasts, and AI models on your event data.</p>
+      <span class="section-label">Decision Tools</span>
+      <h2 class="section-title">Insights &amp; Analysis</h2>
+      <p class="section-desc">Explore your event data with smart tools that help you make better decisions.</p>
     </div>
 
     <!-- Model catalog -->
+    <p *ngIf="!selectedModel() && roleSubtitle()" class="role-subtitle" style="text-align:center;font-size:0.85rem;color:var(--text-muted,#8b949e);margin-bottom:0.5rem;">{{ roleSubtitle() }}</p>
     <div *ngIf="!selectedModel()" class="catalog-grid">
-      <p *ngIf="roleSubtitle()" class="role-subtitle" style="grid-column:1/-1;text-align:center;font-size:0.85rem;color:var(--text-muted,#8b949e);margin-bottom:0.5rem;">{{ roleSubtitle() }}</p>
       <div class="catalog-card" *ngIf="filteredModels().includes('price')" (click)="selectModel('price')">
         <div class="catalog-card-header">
           <div class="catalog-icon" style="background:rgba(56,139,253,0.1);color:#388bfd"><lucide-icon name="bar-chart-2" [size]="22"></lucide-icon></div>
@@ -346,13 +346,13 @@
         </div>
       </div>
       <div class="panel-actions">
-        <button nz-button nzType="primary" (click)="runPricePredict()" [nzLoading]="priceLoading()">Predict</button>
+        <button nz-button nzType="primary" (click)="runPricePredict()" [nzLoading]="priceLoading()">Estimate Price</button>
       </div>
       <p *ngIf="priceError()" class="panel-error">{{ priceError() }}</p>
       <div *ngIf="priceResult()" class="price-result panel-result">
-        <span class="result-label">Predicted Final Price</span>
+        <span class="result-label">Suggested Final Price</span>
         <span class="result-value">{{ priceResult()!.prediction | number:'1.2-2' }}</span>
-        <span class="result-meta">Model: {{ priceResult()!.model }}</span>
+        <span class="result-meta">Based on your event details</span>
       </div>
     </div>
 
@@ -400,17 +400,17 @@
         <div class="nz-field"><label class="nz-label">Month</label><nz-input-number [(ngModel)]="fidelForm.month" [nzMin]="1" [nzMax]="12" style="width:100%"></nz-input-number></div>
       </div>
       <div class="panel-actions">
-        <button nz-button nzType="primary" (click)="runFidelPredict()" [nzLoading]="fidelLoading()">Predict</button>
+        <button nz-button nzType="primary" (click)="runFidelPredict()" [nzLoading]="fidelLoading()">Analyse</button>
       </div>
       <p *ngIf="fidelError()" class="panel-error">{{ fidelError() }}</p>
       <div *ngIf="fidelResult()" class="fidel-result panel-result">
         <span class="result-label">{{ fidelResult()!.label }}</span>
         <span class="result-value">{{ (fidelResult()!.probabilite_fidelite * 100) | number:'1.1-1' }}%</span>
-        <span class="result-meta">Confidence: {{ fidelResult()!.niveau_confiance }} · {{ fidelResult()!.action_recommandee }}</span>
+        <span class="result-meta">Recommended action: {{ fidelResult()!.action_recommandee }}</span>
         <div class="kpi-row" *ngIf="fidelResult()!.accuracy != null">
           <div class="kpi-card"><span class="kpi-val">{{ (fidelResult()!.accuracy! * 100) | number:'1.1-1' }}%</span><span class="kpi-lbl">Correct Predictions</span></div>
           <div class="kpi-card"><span class="kpi-val">{{ (fidelResult()!.recall! * 100) | number:'1.1-1' }}%</span><span class="kpi-lbl">Loyal Clients Found</span></div>
-          <div class="kpi-card"><span class="kpi-val">{{ (fidelResult()!.roc_auc! * 100) | number:'1.1-1' }}%</span><span class="kpi-lbl">Prediction Confidence</span></div>
+          <div class="kpi-card"><span class="kpi-val">{{ (fidelResult()!.roc_auc! * 100) | number:'1.1-1' }}%</span><span class="kpi-lbl">Reliability Score</span></div>
         </div>
       </div>
     </div>
@@ -436,13 +436,13 @@
         </div>
       </div>
       <div class="panel-actions">
-        <button nz-button nzType="primary" (click)="runLoyaltyPredict()" [nzLoading]="loyaltyLoading()">Predict</button>
+        <button nz-button nzType="primary" (click)="runLoyaltyPredict()" [nzLoading]="loyaltyLoading()">Check</button>
       </div>
       <p *ngIf="loyaltyError()" class="panel-error">{{ loyaltyError() }}</p>
       <div *ngIf="loyaltyResult()" class="loyalty-result panel-result">
-        <span class="result-label">{{ loyaltyResult()!.is_loyal ? 'Loyal' : 'Not Loyal' }}</span>
+        <span class="result-label">{{ loyaltyResult()!.is_loyal ? 'Likely to return' : 'At risk of leaving' }}</span>
         <span class="result-value">{{ (loyaltyResult()!.probability * 100) | number:'1.1-1' }}%</span>
-        <span class="result-meta">Status: {{ loyaltyResult()!.status }}</span>
+        <span class="result-meta">Confidence level</span>
       </div>
     </div>
 
@@ -456,10 +456,10 @@
         <div class="nz-field"><label class="nz-label">Final Price</label><nz-input-number [(ngModel)]="clusterForm.final_price" [nzStep]="10" style="width:100%"></nz-input-number></div>
         <div class="nz-field"><label class="nz-label">Rating</label><nz-input-number [(ngModel)]="clusterForm.rating" [nzStep]="0.1" [nzMin]="0" [nzMax]="5" style="width:100%"></nz-input-number></div>
         <div class="nz-field"><label class="nz-label">Visitors</label><nz-input-number [(ngModel)]="clusterForm.visitors" style="width:100%"></nz-input-number></div>
-        <div class="nz-field"><label class="nz-label">Algorithm</label>
+        <div class="nz-field"><label class="nz-label">Grouping Method</label>
           <nz-select [(ngModel)]="clusterForm.algo" style="width:100%">
-            <nz-option nzValue="kmeans" nzLabel="KMeans"></nz-option>
-            <nz-option nzValue="dbscan" nzLabel="DBSCAN"></nz-option>
+            <nz-option nzValue="kmeans" nzLabel="Standard"></nz-option>
+            <nz-option nzValue="dbscan" nzLabel="Flexible"></nz-option>
           </nz-select>
         </div>
         <div class="nz-field"><label class="nz-label">Event Type</label>
@@ -478,19 +478,11 @@
         </div>
       </div>
       <div class="panel-actions">
-        <button nz-button nzType="primary" (click)="runClusterPredict()" [nzLoading]="clusterLoading()">Predict</button>
+        <button nz-button nzType="primary" (click)="runClusterPredict()" [nzLoading]="clusterLoading()">Group Events</button>
       </div>
       <p *ngIf="clusterError()" class="panel-error">{{ clusterError() }}</p>
       <div *ngIf="clusterResult()" class="cluster-result panel-result">
-        <span class="result-label">{{ clusterResult()!.cluster_name }}</span>
-        <span class="result-value">Cluster {{ clusterResult()!.cluster_id }}</span>
-        <span class="result-meta">Algorithm: {{ clusterResult()!.algorithm }}</span>
-        <div class="kpi-row" *ngIf="clusterResult()!.silhouette_score != null">
-          <div class="kpi-card"><span class="kpi-val">{{ clusterResult()!.silhouette_score! | number:'1.3-3' }}</span><span class="kpi-lbl">Group Clarity</span></div>
-          <div class="kpi-card"><span class="kpi-val">{{ clusterResult()!.davies_bouldin_score! | number:'1.3-3' }}</span><span class="kpi-lbl">Group Separation</span></div>
-          <div class="kpi-card"><span class="kpi-val">{{ clusterResult()!.n_clusters_detected }}</span><span class="kpi-lbl">Groups Found</span></div>
-          <div class="kpi-card" *ngIf="clusterResult()!.noise_points"><span class="kpi-val">{{ clusterResult()!.noise_points }}</span><span class="kpi-lbl">Unclassified</span></div>
-        </div>
+        <app-cluster-chart [data]="clusterResult()!"></app-cluster-chart>
       </div>
     </div>
 
@@ -507,11 +499,11 @@
         <div class="nz-field"><label class="nz-label">Horizon (months)</label><nz-input-number [(ngModel)]="forecastForm.horizon" [nzMin]="1" [nzMax]="24" style="width:100%"></nz-input-number></div>
       </div>
       <div class="panel-actions">
-        <button nz-button nzType="primary" (click)="runForecast()" [nzLoading]="forecastLoading()">Forecast</button>
+        <button nz-button nzType="primary" (click)="runForecast()" [nzLoading]="forecastLoading()">Run Forecast</button>
       </div>
       <p *ngIf="forecastError()" class="panel-error">{{ forecastError() }}</p>
       <div *ngIf="forecastResult()" class="forecast-result panel-result">
-        <span class="result-label">Forecast — {{ forecastResult()!.category }}</span>
+        <span class="result-label">Outlook — {{ forecastResult()!.category }}</span>
         <div class="kpi-row">
           <div class="kpi-card kpi-accent">
             <span class="kpi-val">{{ forecastTotalReservations | number:'1.0-0' }}</span>
@@ -531,7 +523,7 @@
           </div>
         </div>
         <app-forecast-chart [data]="forecastResult()!"></app-forecast-chart>
-        <span class="result-meta">Model: {{ forecastResult()!.model }} · {{ forecastResult()!.forecast.length }} periods forecast</span>
+        <span class="result-meta">{{ forecastResult()!.forecast.length }} months ahead</span>
       </div>
     </div>
 
@@ -541,7 +533,7 @@
       <h3 class="panel-title">Revenue Outlook</h3>
 
       <div class="horizon-selector">
-        <span class="horizon-label">Forecast window</span>
+        <span class="horizon-label">Time period</span>
         <div class="horizon-btns">
           <button [class.active]="revenueHorizon() === 4"  (click)="revenueHorizon.set(4);  runRevenueForecast()">4 months</button>
           <button [class.active]="revenueHorizon() === 6"  (click)="revenueHorizon.set(6);  runRevenueForecast()">6 months</button>
@@ -551,14 +543,14 @@
 
       <div *ngIf="revenueLoading()" class="rev-loading">
         <div class="rev-spinner"></div>
-        <p>Loading your revenue outlook…</p>
+        <p>Loading revenue forecast…</p>
       </div>
 
       <p *ngIf="revenueError()" class="panel-error">{{ revenueError() }}</p>
 
       <div *ngIf="revenueForecast() && !revenueLoading()" class="panel-result revenue-chart-result">
         <div class="result-meta" *ngIf="revenueForecastData?.model">
-          Best model applied: {{ revenueForecastData!.model }}
+          Forecast method: {{ revenueForecastData!.model }}
         </div>
         <div class="kpi-row" style="margin-bottom:20px">
           <div class="kpi-card kpi-accent">
@@ -588,7 +580,7 @@
         </div>
       </div>
       <div class="panel-actions">
-        <button nz-button nzType="primary" (click)="runSentiment()" [nzLoading]="sentimentLoading()">Analyze</button>
+        <button nz-button nzType="primary" (click)="runSentiment()" [nzLoading]="sentimentLoading()">Analyse Feedback</button>
       </div>
       <div *ngIf="sentimentResult()" class="sentiment-result panel-result">
         <span class="result-label">{{ sentimentResult()!.label }}</span>
@@ -606,7 +598,7 @@
         <div class="nz-field"><label class="nz-label">Count</label><nz-input-number [(ngModel)]="recoCount" [nzMin]="1" [nzMax]="10" style="width:100%"></nz-input-number></div>
       </div>
       <div class="panel-actions">
-        <button nz-button nzType="primary" (click)="runReco()" [nzLoading]="recoLoading()">Recommend</button>
+        <button nz-button nzType="primary" (click)="runReco()" [nzLoading]="recoLoading()">Get Suggestions</button>
       </div>
       <p *ngIf="recoError()" class="panel-error">{{ recoError() }}</p>
       <div *ngIf="recoResult()" class="reco-result panel-result">
@@ -631,13 +623,13 @@
       <button nz-button nzType="default" class="panel-back" (click)="selectModel(null)"><span>←</span> Back to Models</button>
       <h3 class="panel-title">Unusual Activity Alert</h3>
       <div class="panel-actions">
-        <button nz-button nzType="primary" nzDanger (click)="runAnomalies()" [nzLoading]="anomalyLoading()">Detect</button>
+        <button nz-button nzType="primary" nzDanger (click)="runAnomalies()" [nzLoading]="anomalyLoading()">Scan Events</button>
       </div>
       <p *ngIf="anomalyError()" class="panel-error">{{ anomalyError() }}</p>
       <div *ngIf="anomalyResult()" class="anomaly-result panel-result">
-        <span class="result-label">Anomalies Found</span>
+        <span class="result-label">Unusual Events Found</span>
         <span class="result-value">{{ anomalyResult()!.anomaly_count }} / {{ anomalyResult()!.total_count }}</span>
-        <span class="result-meta">Rate: {{ anomalyRatePercent | number:'1.1-1' }}%</span>
+        <span class="result-meta">Out of all events analysed</span>
       </div>
     </div>
 
@@ -645,20 +637,20 @@
     <div *ngIf="selectedModel() === 'dl'" class="catalog-panel">
       <button nz-button nzType="default" class="panel-back" (click)="selectModel(null)"><span>←</span> Back to Models</button>
       <h3 class="panel-title">Advanced Loyalty Predictor</h3>
-      <p class="panel-desc">Uses the same inputs as Fidelisation. Fill the Fidelisation form first if needed.</p>
+      <p class="panel-desc">Uses the same details as the Client Return Likelihood tool. Fill that form first if needed.</p>
       <div class="panel-actions">
-        <button nz-button nzType="primary" (click)="runDL()" [nzLoading]="dlLoading()">Predict</button>
+        <button nz-button nzType="primary" (click)="runDL()" [nzLoading]="dlLoading()">Analyse</button>
       </div>
       <p *ngIf="dlError()" class="panel-error">{{ dlError() }}</p>
       <div *ngIf="dlResult()" class="dl-result panel-result">
-        <span class="result-label">{{ dlResult()!.prediction === 1 ? 'Loyal' : 'Not Loyal' }}</span>
+        <span class="result-label">{{ dlResult()!.prediction === 1 ? 'Likely to return' : 'At risk of leaving' }}</span>
         <span class="result-value">{{ (dlResult()!.confidence * 100) | number:'1.1-1' }}%</span>
         <span class="result-meta">{{ dlResult()!.note }}</span>
         <div class="kpi-row" *ngIf="dlResult()!.accuracy != null">
           <div class="kpi-card"><span class="kpi-val">{{ (dlResult()!.accuracy! * 100) | number:'1.1-1' }}%</span><span class="kpi-lbl">Correct Predictions</span></div>
           <div class="kpi-card"><span class="kpi-val">{{ (dlResult()!.f1_score! * 100) | number:'1.1-1' }}%</span><span class="kpi-lbl">Balanced Score</span></div>
-          <div class="kpi-card"><span class="kpi-val">{{ (dlResult()!.auc! * 100) | number:'1.1-1' }}%</span><span class="kpi-lbl">Prediction Confidence</span></div>
-          <div class="kpi-card"><span class="kpi-val">{{ dlResult()!.iterations }}</span><span class="kpi-lbl">Training Rounds</span></div>
+          <div class="kpi-card"><span class="kpi-val">{{ (dlResult()!.auc! * 100) | number:'1.1-1' }}%</span><span class="kpi-lbl">Reliability Score</span></div>
+          <div class="kpi-card"><span class="kpi-val">{{ dlResult()!.iterations }}</span><span class="kpi-lbl">Training Cycles</span></div>
         </div>
       </div>
     </div>
@@ -672,7 +664,7 @@
     <div class="section-header">
       <span class="section-label">About</span>
       <h2 class="section-title">What is EventZella?</h2>
-      <p class="section-desc">A full-stack AI-powered analytics platform built for event management businesses.</p>
+      <p class="section-desc">A smart analytics platform designed to help event businesses make better decisions.</p>
     </div>
     <div class="card-grid">
       <div class="card">
@@ -682,23 +674,23 @@
       </div>
       <div class="card">
         <div class="card-icon" style="background:rgba(163,113,247,0.1);color:#a371f7"><lucide-icon name="brain" [size]="22"></lucide-icon></div>
-        <h3 class="card-title">9 ML Models</h3>
-        <p class="card-desc">Price prediction, fidelisation, loyalty, clustering, forecasting, sentiment, recommendations, anomaly detection, and deep learning.</p>
+        <h3 class="card-title">10 Decision Tools</h3>
+        <p class="card-desc">Smart pricing, client loyalty analysis, event grouping, demand forecasting, revenue outlook, feedback analysis, recommendations, and more.</p>
       </div>
       <div class="card">
         <div class="card-icon" style="background:rgba(63,185,80,0.1);color:#3fb950"><lucide-icon name="zap" [size]="22"></lucide-icon></div>
-        <h3 class="card-title">AI Chatbot</h3>
-        <p class="card-desc">Groq LLaMA-powered assistant for instant answers about your event data.</p>
+        <h3 class="card-title">Smart Assistant</h3>
+        <p class="card-desc">An intelligent chatbot that answers your questions about event data instantly.</p>
       </div>
       <div class="card">
         <div class="card-icon" style="background:rgba(251,191,36,0.1);color:#fbbf24"><lucide-icon name="shield" [size]="22"></lucide-icon></div>
         <h3 class="card-title">Role-based Access</h3>
-        <p class="card-desc">Admin-only sections for dashboards and lab. Secure sign-in with credential validation.</p>
+        <p class="card-desc">Each team sees only the tools relevant to their role. Secure and simple sign-in.</p>
       </div>
       <div class="card">
         <div class="card-icon" style="background:rgba(247,120,186,0.1);color:#f778ba"><lucide-icon name="rocket" [size]="22"></lucide-icon></div>
-        <h3 class="card-title">Angular 20 + FastAPI</h3>
-        <p class="card-desc">Modern frontend with zoneless change detection, signals, and a Python ML backend.</p>
+        <h3 class="card-title">Modern &amp; Reliable</h3>
+        <p class="card-desc">Built with cutting-edge technology for speed, reliability, and a smooth user experience.</p>
       </div>
       <div class="card">
         <div class="card-icon" style="background:rgba(56,139,253,0.1);color:#388bfd"><lucide-icon name="award" [size]="22"></lucide-icon></div>

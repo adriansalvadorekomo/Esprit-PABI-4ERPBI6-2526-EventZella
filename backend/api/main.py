@@ -22,6 +22,14 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 app = FastAPI(title="EventZella API")
 
 from prometheus_fastapi_instrumentator import Instrumentator
+from prometheus_client import Counter
+
+pipeline_runs_total = Counter(
+    "pipeline_runs_total",
+    "Total number of pipeline runs",
+    ["pipeline", "status"],
+)
+
 Instrumentator().instrument(app).expose(app)
 
 app.add_middleware(
@@ -1205,3 +1213,14 @@ def unread_alert_count() -> dict:
     with engine.connect() as conn:
         count = conn.execute(text("SELECT COUNT(*) FROM n8n_alerts WHERE is_read = FALSE")).scalar()
     return {"unread_count": count}
+
+
+class PipelineMetric(BaseModel):
+    pipeline: str
+    status: str
+
+
+@app.post("/metrics/pipeline")
+def report_pipeline_metric(body: PipelineMetric) -> dict:
+    pipeline_runs_total.labels(pipeline=body.pipeline, status=body.status).inc()
+    return {"status": "ok", "pipeline": body.pipeline, "recorded": True}
