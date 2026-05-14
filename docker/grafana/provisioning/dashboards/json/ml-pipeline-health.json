@@ -1,0 +1,22 @@
+{
+  "title": "ML Pipeline Health",
+  "uid": "ml-pipeline-health",
+  "panels": [
+    {
+      "title": "Train Requests",
+      "type": "stat",
+      "targets": [{ "expr": "rate(http_requests_total{job='fastapi',path=~'/train/.*'}[5m])", "legendFormat": "Train" }]
+    },
+    {
+      "title": "Prediction Requests",
+      "type": "stat",
+      "targets": [{ "expr": "rate(http_requests_total{job='fastapi',path=~'/predict/.*'}[5m])", "legendFormat": "Predict" }]
+    },
+    {
+      "title": "Model Serve Latency",
+      "type": "timeseries",
+      "targets": [{ "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{job='fastapi',path=~'/predict/.*'}[5m]))", "legendFormat": "p99" }]
+    }
+  ],
+  "schemaVersion": 39
+}

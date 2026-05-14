@@ -1,0 +1,22 @@
+{
+  "title": "API Performance",
+  "uid": "api-performance",
+  "panels": [
+    {
+      "title": "Request Rate",
+      "type": "timeseries",
+      "targets": [{ "expr": "rate(http_requests_total{job='fastapi'}[5m])", "legendFormat": "{{method}} {{path}}" }]
+    },
+    {
+      "title": "Response Time (p95)",
+      "type": "timeseries",
+      "targets": [{ "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job='fastapi'}[5m]))", "legendFormat": "{{method}}" }]
+    },
+    {
+      "title": "Error Rate",
+      "type": "timeseries",
+      "targets": [{ "expr": "rate(http_requests_total{job='fastapi',status=~'5..'}[5m])", "legendFormat": "5xx errors" }]
+    }
+  ],
+  "schemaVersion": 39
+}

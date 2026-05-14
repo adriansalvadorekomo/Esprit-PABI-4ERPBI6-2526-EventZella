@@ -1,0 +1,22 @@
+{
+  "title": "System Health",
+  "uid": "system-health",
+  "panels": [
+    {
+      "title": "Uptime",
+      "type": "stat",
+      "targets": [{ "expr": "time() - process_start_time_seconds{job='fastapi'}", "legendFormat": "FastAPI" }]
+    },
+    {
+      "title": "Memory Usage",
+      "type": "gauge",
+      "targets": [{ "expr": "process_resident_memory_bytes{job='fastapi'}", "legendFormat": "FastAPI" }]
+    },
+    {
+      "title": "CPU Usage",
+      "type": "timeseries",
+      "targets": [{ "expr": "rate(process_cpu_seconds_total{job='fastapi'}[1m])", "legendFormat": "FastAPI" }]
+    }
+  ],
+  "schemaVersion": 39
+}

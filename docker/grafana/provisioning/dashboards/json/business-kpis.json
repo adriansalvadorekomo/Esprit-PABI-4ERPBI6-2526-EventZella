@@ -1,0 +1,22 @@
+{
+  "title": "Business KPIs",
+  "uid": "business-kpis",
+  "panels": [
+    {
+      "title": "Total Predictions",
+      "type": "stat",
+      "targets": [{ "expr": "increase(http_requests_total{job='fastapi'}[24h])", "legendFormat": "Total" }]
+    },
+    {
+      "title": "Requests by Endpoint",
+      "type": "piechart",
+      "targets": [{ "expr": "sum by (path) (rate(http_requests_total{job='fastapi'}[1h]))", "legendFormat": "{{path}}" }]
+    },
+    {
+      "title": "Active Users",
+      "type": "timeseries",
+      "targets": [{ "expr": "sum(rate(http_requests_total{job='fastapi'}[5m]))", "legendFormat": "Requests/s" }]
+    }
+  ],
+  "schemaVersion": 39
+}
