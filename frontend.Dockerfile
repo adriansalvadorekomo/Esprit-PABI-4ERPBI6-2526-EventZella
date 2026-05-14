@@ -2,10 +2,10 @@ FROM node:20 AS build
 
 WORKDIR /app
 COPY eventzilla-front/package*.json /app/
-RUN npm install
+RUN npm ci --legacy-peer-deps
 
 COPY eventzilla-front /app
-RUN npm run build
+RUN npm run build -- --configuration production
 
 FROM nginx:alpine
 COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
