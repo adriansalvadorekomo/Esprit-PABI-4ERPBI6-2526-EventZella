@@ -4,7 +4,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
-import { LucideAngularModule, BarChart2, TrendingUp, Users, Zap, Lightbulb, Settings, Rocket, Star, Brain, Search, ChevronRight, ArrowRight, Target, Award, Shield, Home, LayoutDashboard, FlaskConical, Info, Sun, Moon, LogIn, LogOut, Menu, X } from 'lucide-angular';
+import { LucideAngularModule, BarChart2, TrendingUp, Users, Zap, Lightbulb, Settings, Rocket, Star, Brain, Search, ChevronRight, ArrowRight, Target, Award, Shield, Home, LayoutDashboard, FlaskConical, Info, Sun, Moon, LogIn, LogOut, Menu, X, Bell, CheckCircle, RefreshCw } from 'lucide-angular';
 
 import { NzInputNumberModule } from 'ng-zorro-antd/input-number';
 import { NzSelectModule } from 'ng-zorro-antd/select';
@@ -22,6 +22,7 @@ import { FooterComponent } from './components/footer.component';
 import { HomeComponent } from './pages/home.component';
 import { ChatbotComponent } from './components/chatbot.component';
 import { ForecastChartComponent } from './components/forecast-chart.component';
+import { ClusterChartComponent } from './components/cluster-chart.component';
 import { NgrokInterceptor } from './services/ngrok.interceptor';
 
 @NgModule({
@@ -32,7 +33,8 @@ import { NgrokInterceptor } from './services/ngrok.interceptor';
     FooterComponent,
     HomeComponent,
     ChatbotComponent,
-    ForecastChartComponent
+    ForecastChartComponent,
+    ClusterChartComponent
   ],
   imports: [
     BrowserModule,
@@ -41,7 +43,7 @@ import { NgrokInterceptor } from './services/ngrok.interceptor';
     FormsModule,
     HttpClientModule,
     AppRoutingModule,
-    LucideAngularModule.pick({ BarChart2, TrendingUp, Users, Zap, Lightbulb, Settings, Rocket, Star, Brain, Search, ChevronRight, ArrowRight, Target, Award, Shield, Home, LayoutDashboard, FlaskConical, Info, Sun, Moon, LogIn, LogOut, Menu, X }),
+    LucideAngularModule.pick({ BarChart2, TrendingUp, Users, Zap, Lightbulb, Settings, Rocket, Star, Brain, Search, ChevronRight, ArrowRight, Target, Award, Shield, Home, LayoutDashboard, FlaskConical, Info, Sun, Moon, LogIn, LogOut, Menu, X, Bell, CheckCircle, RefreshCw }),
     NzInputNumberModule,
     NzSelectModule,
     NzDatePickerModule,
