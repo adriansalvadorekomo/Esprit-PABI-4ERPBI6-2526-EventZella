@@ -79,7 +79,7 @@ Although the operational system manages transactions efficiently, its data was n
 ### Data Flow
 
 ```
-Operational Events (MongoDB)
+Raw CSV Files (operational data)
         ↓
    Talend (ETL)
         ↓
@@ -125,7 +125,7 @@ The system separates transactional processing from analytical processing to ensu
 The ETL layer is built with **Talend Open Studio** and consists of two master jobs:
 
 ### `job_master_dw` — Data Warehouse Population
-Extracts raw operational data from MongoDB, transforms it, and loads it into the PostgreSQL data warehouse. Sub-jobs include:
+Extracts raw operational data from CSV files, transforms it, and loads it into the PostgreSQL data warehouse. Sub-jobs include:
 
 | Job | Description |
 |---|---|
