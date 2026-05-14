@@ -1,6 +1,6 @@
 import {
-  Component, signal, inject, ViewChild, ElementRef,
-  AfterViewChecked, OnDestroy
+  Component, signal, inject, computed, ViewChild, ElementRef,
+  AfterViewChecked, OnDestroy, effect
 } from '@angular/core';
 import {
   Chart, BarController, BarElement, CategoryScale, LinearScale,
@@ -8,6 +8,8 @@ import {
   Tooltip, Legend, Filler
 } from 'chart.js';
 import { ApiService, ChatResponse } from '../services/api.service';
+import { AuthService } from '../services/auth.service';
+import { CHATBOT_ROLES } from '../services/chatbot-roles.config';
 
 Chart.register(
   BarController, BarElement, CategoryScale, LinearScale,
@@ -35,29 +37,47 @@ interface Message {
 })
 export class ChatbotComponent implements AfterViewChecked, OnDestroy {
   @ViewChild('msgEnd') private msgEnd!: ElementRef;
-  private readonly api = inject(ApiService);
+  private readonly api  = inject(ApiService);
+  protected readonly auth = inject(AuthService);
   private charts = new Map<string, Chart>();
 
   open     = signal(false);
   input    = signal('');
+  private sessionKey = '';
+
+  private get roleConfig() {
+    const role = this.auth.role();
+    return CHATBOT_ROLES[role] ?? CHATBOT_ROLES['admin'];
+  }
+
+  get roleTitle(): string { return this.roleConfig.title; }
+  get quickQuestions(): string[] { return this.roleConfig.quickSuggestions; }
+
   messages = signal<Message[]>([
     { role: 'bot', text: "Hi! I'm the EventZella AI Assistant. Ask me anything about your events data." }
   ]);
 
-  readonly quickQuestions = [
-    'Show events by season',
-    'Top 5 providers by reservations',
-    'Show reservations by status',
-    'What is the average rating?',
-    'Which event category has the most events?',
-    'Show visitor trend by month',
-    'What is the total revenue?',
-    'Which providers have the lowest ratings?',
-  ];
+  constructor() {
+    effect(() => {
+      const nextSessionKey = `${this.auth.isLoggedIn()}|${this.auth.userEmail()}|${this.auth.role()}`;
+      if (nextSessionKey === this.sessionKey) return;
+      this.sessionKey = nextSessionKey;
+      queueMicrotask(() => this.resetConversation());
+    });
+  }
 
   toggle(): void { this.open.update(v => !v); }
   tableKeys(row: Record<string, unknown>): string[] { return Object.keys(row); }
   ask(q: string): void { this.input.set(q); this.send(); }
+
+  private resetConversation(): void {
+    this.charts.forEach(c => c.destroy());
+    this.charts.clear();
+    this.input.set('');
+    this.messages.set([
+      { role: 'bot', text: "Hi! I'm the EventZella AI Assistant. Ask me anything about your events data." }
+    ]);
+  }
 
   send(): void {
     const text = this.input().trim();
@@ -66,7 +86,7 @@ export class ChatbotComponent implements AfterViewChecked, OnDestroy {
     this.input.set('');
     this.messages.update(m => [...m, { role: 'bot', text: '', loading: true }]);
 
-    this.api.chatbot(text).subscribe({
+    this.api.chatbot(text, this.auth.role()).subscribe({
       next: (res: ChatResponse) => {
         const chartId = res.type === 'chart' && res.data?.length
           ? `chart-${Date.now()}` : undefined;

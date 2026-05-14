@@ -465,12 +465,14 @@
 
 /* Catalog grid */
 .catalog-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 16px;
 }
 
 .catalog-card {
+  width: 240px;
   padding: 24px;
   background: var(--bg-elevated);
   border: 1px solid var(--border-subtle);
@@ -480,6 +482,7 @@
   flex-direction: column;
   gap: 12px;
   transition: all 0.15s ease;
+  flex: 0 0 auto;
 }
 
 .catalog-card:hover {
@@ -1051,3 +1054,5 @@
   color: #fff;
   font-weight: 600;
 }
+
+

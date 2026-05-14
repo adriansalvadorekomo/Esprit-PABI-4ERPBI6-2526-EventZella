@@ -1,6 +1,9 @@
+from datetime import datetime
 from functools import lru_cache
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
+from pydantic import BaseModel
+from sqlalchemy import text
 import pandas as pd
 
 from ..schemas.ml import InputFidelisation, InputForecast, InputSentiment, PricePredictRequest
@@ -23,6 +26,34 @@ def home() -> dict:
         "docs": "/docs",
         "health": "/health",
     }
+
+
+# ── Role-based chatbot enforcement ───────────────────────────
+_ROLE_TOPICS: dict[str, list[str]] = {
+    "marketing":   ["customer loyalty","client feedback","personalized event","customer segmentation",
+                    "campaign","visitor engagement","marketing kpi","retention","satisfaction",
+                    "engagement","recommendation","sentiment","channel","beneficiar"],
+    "quality":     ["client satisfaction","service quality","return likelihood","feedback",
+                    "unusual activity","complaint","quality kpi","rating","review",
+                    "negative","provider quality","satisfaction trend"],
+    "operational": ["booking demand","event profile","operational","planning","traffic",
+                    "unusual activity","reservation","anomaly","forecast","season",
+                    "busiest","visitor flow","overload","peak"],
+    "business":    ["pricing","revenue","profitability","business kpi","strategic",
+                    "financial","provider performance","profit","income","earnings",
+                    "cost","budget","price","quarter","forecast revenue"],
+}
+_DENIED_REPLY = "You do not have access to this topic. Please contact the administrator."
+
+def _role_allowed(role: str, question: str) -> bool:
+    if role == "admin" or not role:
+        return True
+    topics = _ROLE_TOPICS.get(role, [])
+    q = question.lower()
+    allowed = any(t in q for t in topics)
+    if not allowed:
+        print(f"[CHATBOT] DENIED role={role!r} question={question!r}")
+    return allowed
 
 
 
@@ -60,8 +91,14 @@ def _ask_groq(message: str, db_context: str) -> str:
 
 
 @router.post("/chatbot")
-def chatbot(body: dict) -> dict:
+def chatbot(body: dict, request: Request) -> dict:
+    role = (request.headers.get("X-User-Role") or "").strip().lower()
     message = (body.get("message") or "").strip()
+
+    if not _role_allowed(role, message):
+        return {"reply": _DENIED_REPLY, "sql": None, "data": [],
+                "type": "general", "chart_type": None, "status": "denied"}
+
     engine  = get_engine()
 
     # Fetch live KPI context
@@ -266,4 +303,94 @@ def revenue_forecast(horizon: int = 6) -> dict:
             for d, v in zip(dates, values)]
 
     return {"status": "success", "model": "Revenue Forecast", "history": history, "forecast": rows}
+
+
+# ── n8n Alerts ──────────────────────────────────────────────
+class AlertCreate(BaseModel):
+    pipeline: str
+    severity: str = "error"
+    title: str
+    message: str
+    details: dict = {}
+
+
+@router.post("/alerts")
+def create_alert(alert: AlertCreate) -> dict:
+    import json
+
+    from ..db import get_engine
+
+    engine = get_engine()
+    with engine.connect() as conn:
+        conn.execute(
+            text("""
+                INSERT INTO n8n_alerts (pipeline, severity, title, message, details)
+                VALUES (:pipeline, :severity, :title, :message, :details::jsonb)
+            """),
+            {
+                "pipeline": alert.pipeline,
+                "severity": alert.severity,
+                "title": alert.title,
+                "message": alert.message,
+                "details": json.dumps(alert.details),
+            },
+        )
+        conn.commit()
+    return {"status": "success"}
+
+
+@router.get("/alerts")
+def get_alerts(limit: int = 50) -> list[dict]:
+    from ..db import get_engine
+
+    engine = get_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(
+            text("""
+                SELECT id, pipeline, severity, title, message, details, created_at, is_read
+                FROM n8n_alerts
+                ORDER BY created_at DESC
+                LIMIT :limit
+            """),
+            {"limit": limit},
+        ).fetchall()
+    return [
+        {
+            "id": r[0],
+            "pipeline": r[1],
+            "severity": r[2],
+            "title": r[3],
+            "message": r[4],
+            "details": r[5],
+            "created_at": str(r[6]),
+            "is_read": r[7],
+        }
+        for r in rows
+    ]
+
+
+@router.post("/alerts/{alert_id}/read")
+def mark_alert_read(alert_id: int) -> dict:
+    from ..db import get_engine
+
+    engine = get_engine()
+    with engine.connect() as conn:
+        conn.execute(
+            text("UPDATE n8n_alerts SET is_read = TRUE WHERE id = :id"),
+            {"id": alert_id},
+        )
+        conn.commit()
+    return {"status": "success"}
+
+
+@router.get("/alerts/unread-count")
+def unread_alert_count() -> dict:
+    from ..db import get_engine
+
+    engine = get_engine()
+    with engine.connect() as conn:
+        count = conn.execute(
+            text("SELECT COUNT(*) FROM n8n_alerts WHERE is_read = FALSE")
+        ).scalar()
+    return {"unread_count": count}
 
