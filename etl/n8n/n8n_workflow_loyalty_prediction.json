@@ -1,0 +1,441 @@
+{
+  "name": "EventZella Loyalty Prediction Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 2
+            }
+          ]
+        }
+      },
+      "name": "Loyalty Schedule",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        250,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://fastapi:8000/lab/train/loyalty",
+        "options": {}
+      },
+      "name": "Train Loyalty Model",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    f.sk_beneficiary,\n    f.price,\n    f.budget,\n    f.final_price,\n    f.rating,\n    f.visitors,\n    f.marketing_spend,\n    f.id_complaint,\n    e.type,\n    e.event_date\nFROM fact_suivi_event f\nLEFT JOIN dim_event e ON f.event_sk = e.event_sk",
+        "options": {}
+      },
+      "name": "Load Beneficiary Data",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        250,
+        500
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "GuXQ4ZWVBc0pJBzP",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = [];\n\nfor (const item of $input.all()) {\n  const price = item.json.price || 0;\n  const budget = item.json.budget || 0;\n  const final_price = item.json.final_price || 0;\n\n  items.push({\n    json: {\n      price: price,\n      budget: budget,\n      final_price: final_price,\n      rating: item.json.rating || 0,\n      visitors: item.json.visitors || 0,\n      marketing_spend: item.json.marketing_spend || 0,\n      price_budget_ratio: price / (budget + 0.01),\n      margin: final_price - price,\n      has_complaint: item.json.id_complaint ? 1 : 0,\n      type_encoded: 0,\n      season_encoded: 0,\n      is_weekend: 0,\n      month: new Date(item.json.event_date).getMonth() + 1,\n      sk_beneficiary: item.json.sk_beneficiary\n    }\n  });\n}\n\nreturn items;"
+      },
+      "name": "Prepare Features for ML",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        250,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://fastapi:8000/predict/fidelisation",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "price",
+              "value": "={{ $json.price ?? 0 }}"
+            },
+            {
+              "name": "budget",
+              "value": "={{ $json.budget ?? 0 }}"
+            },
+            {
+              "name": "final_price",
+              "value": "={{ $json.final_price ?? 0 }}"
+            },
+            {
+              "name": "rating",
+              "value": "={{ $json.rating ?? 0 }}"
+            },
+            {
+              "name": "visitors",
+              "value": "={{ $json.visitors ?? 0 }}"
+            },
+            {
+              "name": "marketing_spend",
+              "value": "={{ $json.marketing_spend ?? 0 }}"
+            },
+            {
+              "name": "price_budget_ratio",
+              "value": "={{ $json.price_budget_ratio ?? 0 }}"
+            },
+            {
+              "name": "margin",
+              "value": "={{ $json.margin ?? 0 }}"
+            },
+            {
+              "name": "has_complaint",
+              "value": "={{ $json.has_complaint ?? 0 }}"
+            },
+            {
+              "name": "type_encoded",
+              "value": "={{ $json.type_encoded ?? 0 }}"
+            },
+            {
+              "name": "season_encoded",
+              "value": "={{ $json.season_encoded ?? 0 }}"
+            },
+            {
+              "name": "is_weekend",
+              "value": "={{ $json.is_weekend ?? 0 }}"
+            },
+            {
+              "name": "month",
+              "value": "={{ $json.month ?? 1 }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Predict Loyalty API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        250,
+        900
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst previousItem = $(\"Prepare Features for ML\").first().json;\nreturn [{\n  json: {\n    sk_beneficiary: previousItem.sk_beneficiary,\n    label: response.label,\n    probabilite_fidelite: response.probabilite_fidelite,\n    action_recommandee: response.action_recommandee\n  }\n}];"
+      },
+      "name": "Transform Prediction Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        250,
+        1100
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "675fbdc3-3d5e-434b-a725-33b0b3aa6afe",
+              "name": "sk_beneficiary",
+              "value": "={{ $json.sk_beneficiary }}",
+              "type": "string"
+            },
+            {
+              "id": "8a488a12-a9de-4072-9f3e-77f0d23298ae",
+              "name": "label",
+              "value": "={{ $json.label }}",
+              "type": "string"
+            },
+            {
+              "id": "2694c24f-4ac6-4091-b4fa-1101eb87fa63",
+              "name": "probabilite",
+              "value": "={{ $json.probabilite_fidelite }}",
+              "type": "string"
+            },
+            {
+              "id": "fa0dab71-5c66-4b5e-b5e5-b18fe535a479",
+              "name": "action",
+              "value": "={{ $json.action_recommandee }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "name": "Format Data for Export",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        250,
+        1300
+      ]
+    },
+    {
+      "parameters": {
+        "binaryPropertyName": "predictions_{{ $now.format('yyyy-MM-dd') }}.csv",
+        "options": {}
+      },
+      "name": "Generate CSV Report",
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        600,
+        1400
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9b69d91c-be79-4a16-ae6b-3cef8d10a021",
+              "leftValue": "={{ $json.label }}",
+              "rightValue": "Fidele",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "name": "Check Loyalty Level",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        600,
+        1300
+      ]
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "name": "Aggregate Loyal Customers",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1000,
+        1200
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "subject": "=Rapport de fidelisation - {{ $now.format('dd/MM/yyyy') }}",
+        "emailType": "html",
+        "html": "=<html>\n  <body style=\"margin:0; padding:0; background:#f4f7fb; font-family:Arial, Helvetica, sans-serif; color:#182230;\">\n    <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#f4f7fb; padding:28px 0;\">\n      <tr>\n        <td align=\"center\">\n          <table role=\"presentation\" width=\"680\" cellpadding=\"0\" cellspacing=\"0\" style=\"width:680px; max-width:94%; background:#ffffff; border:1px solid #d9e2ec; border-radius:8px; overflow:hidden;\">\n            <tr>\n              <td style=\"background:#0f2f4f; padding:28px 32px; color:#ffffff;\">\n                <div style=\"font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:#9cc7f5; font-weight:700;\">EventZella Fidelisation</div>\n                <h1 style=\"margin:10px 0 6px; font-size:24px; line-height:1.25; font-weight:700;\">Clients Fideles Detectes</h1>\n                <div style=\"font-size:14px; color:#d7e6f7;\">Rapport genere le {{ $now.format('dd/MM/yyyy HH:mm') }}</div>\n              </td>\n            </tr>\n            <tr>\n              <td style=\"padding:28px 32px 12px;\">\n                <p style=\"margin:0 0 18px; font-size:15px; line-height:1.6; color:#344054;\">La campagne de fidelisation a identifie <strong style=\"color:#175cd3;\">{{ $json.data.length }}</strong> beneficiaires fideles. Voici le recapitulatif des actions recommandees.</p>\n                <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-collapse:collapse; border:1px solid #d9e2ec; border-radius:8px; overflow:hidden; margin:0 0 22px;\">\n                  <tr>\n                    <th align=\"left\" style=\"background:#f8fafc; color:#475467; font-size:12px; text-transform:uppercase; letter-spacing:.05em; padding:12px 14px; border-bottom:1px solid #d9e2ec;\">Beneficiaire</th>\n                    <th align=\"center\" style=\"background:#f8fafc; color:#475467; font-size:12px; text-transform:uppercase; letter-spacing:.05em; padding:12px 14px; border-bottom:1px solid #d9e2ec;\">Probabilite</th>\n                    <th align=\"left\" style=\"background:#f8fafc; color:#475467; font-size:12px; text-transform:uppercase; letter-spacing:.05em; padding:12px 14px; border-bottom:1px solid #d9e2ec;\">Action Recommandee</th>\n                  </tr>\n                  {{ $json.data.map(item => `\n                  <tr>\n                    <td style=\"padding:14px; border-bottom:1px solid #edf2f7; font-size:14px; color:#182230; font-weight:700;\">#${item.sk_beneficiary}</td>\n                    <td align=\"center\" style=\"padding:14px; border-bottom:1px solid #edf2f7;\"><span style=\"display:inline-block; background:#ecfdf5; color:#067647; font-size:13px; font-weight:700; padding:4px 10px; border-radius:999px;\">${(item.probabilite_fidelite * 100).toFixed(1)}%</span></td>\n                    <td style=\"padding:14px; border-bottom:1px solid #edf2f7; font-size:13px; color:#475467;\">${item.action_recommandee}</td>\n                  </tr>\n                  `).join('') }}\n                </table>\n              </td>\n            </tr>\n            <tr>\n              <td style=\"padding:12px 32px 30px;\">\n                <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#f8fafc; border:1px solid #d9e2ec; border-radius:8px;\">\n                  <tr>\n                    <td style=\"padding:16px 18px;\">\n                      <div style=\"font-size:14px; font-weight:700; color:#182230; margin-bottom:8px;\">Synthese de la campagne</div>\n                      <div style=\"font-size:13px; line-height:1.7; color:#475467;\">\u2022 Modele : Regression Logistique (Random Forest)<br>\u2022 Beneficiaires fideles : {{ $json.data.length }}<br>\u2022 Seuil de fidelite : Retour dans les 6 mois<br>\u2022 Execute par le pipeline n8n EventZella</div>\n                    </td>\n                  </tr>\n                </table>\n              </td>\n            </tr>\n            <tr>\n              <td style=\"background:#f8fafc; border-top:1px solid #d9e2ec; padding:16px 32px; font-size:12px; line-height:1.5; color:#667085; text-align:center;\">Notification automatique envoyee par le pipeline de fidelisation EventZella n8n.</td>\n            </tr>\n          </table>\n        </td>\n      </tr>\n    </table>\n  </body>\n</html>",
+        "toList": [
+          "larrymclarens@gmail.com"
+        ]
+      },
+      "name": "Send Loyal Customer Report",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [
+        1250,
+        1200
+      ],
+      "credentials": {
+        "googleGmailOAuth2Api": {
+          "id": "larry-gmail-oauth2",
+          "name": "Gmail Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "name": "Aggregate AtRisk Customers",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1000,
+        1500
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "subject": "=Offre speciale rien que pour vous - EventZella",
+        "emailType": "html",
+        "html": "=<html>\n  <body style=\"margin:0; padding:0; background:#f4f7fb; font-family:Arial, Helvetica, sans-serif; color:#182230;\">\n    <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#f4f7fb; padding:28px 0;\">\n      <tr>\n        <td align=\"center\">\n          <table role=\"presentation\" width=\"680\" cellpadding=\"0\" cellspacing=\"0\" style=\"width:680px; max-width:94%; background:#ffffff; border:1px solid #d9e2ec; border-radius:8px; overflow:hidden;\">\n            <tr>\n              <td style=\"background:#0f2f4f; padding:28px 32px; color:#ffffff;\">\n                <div style=\"font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:#9cc7f5; font-weight:700;\">EventZella</div>\n                <h1 style=\"margin:10px 0 6px; font-size:24px; line-height:1.25; font-weight:700;\">Une offre speciale rien que pour vous</h1>\n                <div style=\"font-size:14px; color:#d7e6f7;\">Nous avons pense a vous</div>\n              </td>\n            </tr>\n            <tr>\n              <td style=\"padding:28px 32px 12px;\">\n                <p style=\"margin:0 0 18px; font-size:15px; line-height:1.6; color:#344054;\">Bonjour,</p>\n                <p style=\"margin:0 0 18px; font-size:15px; line-height:1.6; color:#344054;\">Nous avons analyse votre activite et souhaiterions vous proposer une experience encore meilleure. Voici notre recommandation personnalisee pour vous :</p>\n                <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-collapse:separate; border-spacing:0; margin:0 0 22px;\">\n                  <tr>\n                    <td style=\"background:#eef6ff; border:1px solid #b8d9ff; border-radius:8px; padding:24px;\">\n                      <div style=\"font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:#175cd3; font-weight:700; margin-bottom:8px;\">Recommandation</div>\n                      <div style=\"font-size:18px; line-height:1.4; color:#0b3b68; font-weight:700;\">{{$json[\"data\"][0][\"action_recommandee\"]}}</div>\n                    </td>\n                  </tr>\n                </table>\n                <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-collapse:separate; border-spacing:0; margin:0 0 22px;\">\n                  <tr>\n                    <td style=\"width:50%; background:#f7fafc; border:1px solid #d9e2ec; border-radius:8px 0 0 8px; padding:18px; text-align:center;\">\n                      <div style=\"font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:#667085; font-weight:700;\">Probabilite de fidelite</div>\n                      <div style=\"margin-top:8px; font-size:28px; line-height:1.1; color:#182230; font-weight:700;\">{{ ($json[\"data\"][0][\"probabilite_fidelite\"] * 100).toFixed(1) }}%</div>\n                    </td>\n                    <td style=\"width:50%; background:#f7fafc; border:1px solid #d9e2ec; border-left:none; border-radius:0 8px 8px 0; padding:18px; text-align:center;\">\n                      <div style=\"font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:#667085; font-weight:700;\">Statut</div>\n                      <div style=\"margin-top:8px; font-size:16px; line-height:1.2; color:#182230;\"><span style=\"display:inline-block; background:#fef3f2; color:#b42318; font-size:13px; font-weight:700; padding:4px 12px; border-radius:999px;\">Action requise</span></div>\n                    </td>\n                  </tr>\n                </table>\n                <p style=\"margin:0 0 18px; font-size:15px; line-height:1.6; color:#344054;\">Nous vous invitons a profiter de nos nouvelles offres personnalisees concues specialement pour ameliorer votre experience evenementielle.</p>\n                <div style=\"margin:18px 0 0; padding:14px 16px; background:#fff8e6; border:1px solid #f3d58a; border-radius:8px; color:#594214; font-size:13px; line-height:1.55;\">\n                  <strong>Pourquoi cette offre ?</strong> Notre modele de fidelisation a detecte une baisse potentielle d engagement. Nous souhaitons vous offrir le meilleur service pour continuer a organiser des evenements exceptionnels avec EventZella.\n                </div>\n              </td>\n            </tr>\n            <tr>\n              <td style=\"padding:12px 32px 30px;\">\n                <div style=\"text-align:center; margin-top:16px;\">\n                  <a href=\"mailto:larrymclarens@gmail.com\" style=\"display:inline-block; background:#175cd3; color:#ffffff; text-decoration:none; padding:12px 24px; border-radius:6px; font-size:14px; font-weight:700;\">Contacter le support</a>\n                </div>\n              </td>\n            </tr>\n            <tr>\n              <td style=\"background:#f8fafc; border-top:1px solid #d9e2ec; padding:16px 32px; font-size:12px; line-height:1.5; color:#667085; text-align:center;\">Message automatique genere par le systeme de fidelisation EventZella. Si vous avez des questions, contactez notre equipe.</td>\n            </tr>\n          </table>\n        </td>\n      </tr>\n    </table>\n  </body>\n</html>",
+        "toList": [
+          "larrymclarens@gmail.com"
+        ]
+      },
+      "name": "Send AtRisk Customer Offer",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [
+        1250,
+        1500
+      ],
+      "credentials": {
+        "googleGmailOAuth2Api": {
+          "id": "larry-gmail-oauth2",
+          "name": "Gmail Account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Loyalty Schedule": {
+      "main": [
+        [
+          {
+            "node": "Train Loyalty Model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Train Loyalty Model": {
+      "main": [
+        [
+          {
+            "node": "Load Beneficiary Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Beneficiary Data": {
+      "main": [
+        [
+          {
+            "node": "Prepare Features for ML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Features for ML": {
+      "main": [
+        [
+          {
+            "node": "Predict Loyalty API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Predict Loyalty API": {
+      "main": [
+        [
+          {
+            "node": "Transform Prediction Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform Prediction Result": {
+      "main": [
+        [
+          {
+            "node": "Format Data for Export",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Data for Export": {
+      "main": [
+        [
+          {
+            "node": "Check Loyalty Level",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Generate CSV Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Loyalty Level": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Loyal Customers",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Aggregate AtRisk Customers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Loyal Customers": {
+      "main": [
+        [
+          {
+            "node": "Send Loyal Customer Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate AtRisk Customers": {
+      "main": [
+        [
+          {
+            "node": "Send AtRisk Customer Offer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "id": "3"
+}
