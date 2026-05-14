@@ -6,9 +6,9 @@
 **/dist
 .git
 backend/mlruns
-forecasting
-eda
-doc
-jobs
-dags
+ml/forecasting
+ml/notebooks
+docs
+etl/talend
+etl/airflow
 data
