@@ -1,0 +1,164 @@
+{
+  "name": "EventZella Time Series Model Training Pipeline (Docker Optimized)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "value": 24
+            }
+          ]
+        }
+      },
+      "name": "Daily Trigger",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        250,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://fastapi:8000/lab/train/sarima",
+        "options": {}
+      },
+      "name": "Train SARIMA Model",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://fastapi:8000/lab/train/prophet",
+        "options": {}
+      },
+      "name": "Train Prophet Model",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        250,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://fastapi:8000/lab/train/lstm",
+        "options": {}
+      },
+      "name": "Train LSTM Model (MLP Proxy)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        250,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://fastapi:8000/lab/train/compare",
+        "options": {}
+      },
+      "name": "Compare Models & Select Best",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        250,
+        900
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "subject": "EventZella ML: Daily Forecast Training Completed",
+        "emailType": "html",
+        "html": "=<html>\n  <body style=\"margin:0; padding:0; background:#f4f7fb; font-family:Arial, Helvetica, sans-serif; color:#182230;\">\n    <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#f4f7fb; padding:28px 0;\">\n      <tr>\n        <td align=\"center\">\n          <table role=\"presentation\" width=\"680\" cellpadding=\"0\" cellspacing=\"0\" style=\"width:680px; max-width:94%; background:#ffffff; border:1px solid #d9e2ec; border-radius:8px; overflow:hidden;\">\n            <tr>\n              <td style=\"background:#0f2f4f; padding:28px 32px; color:#ffffff;\">\n                <div style=\"font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:#9cc7f5; font-weight:700;\">EventZella Administration</div>\n                <h1 style=\"margin:10px 0 6px; font-size:24px; line-height:1.25; font-weight:700;\">Daily Time-Series Training Report</h1>\n                <div style=\"font-size:14px; color:#d7e6f7;\">Execution completed on {{ $now.format('yyyy-MM-dd HH:mm') }}</div>\n              </td>\n            </tr>\n            <tr>\n              <td style=\"padding:28px 32px 12px;\">\n                <p style=\"margin:0 0 18px; font-size:15px; line-height:1.6; color:#344054;\">The automated forecasting workflow completed successfully. EventZella trained the SARIMA, Prophet, and LSTM proxy forecasting models, evaluated their latest forecast outputs, and selected the strongest candidate for the current run.</p>\n                <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-collapse:separate; border-spacing:0; margin:0 0 22px;\">\n                  <tr>\n                    <td style=\"width:50%; background:#eef6ff; border:1px solid #b8d9ff; border-radius:8px 0 0 8px; padding:18px;\">\n                      <div style=\"font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:#175cd3; font-weight:700;\">Selected Model</div>\n                      <div style=\"margin-top:8px; font-size:28px; line-height:1.1; color:#0b3b68; font-weight:700;\">{{ $node[\"Compare Models & Select Best\"].json[\"results\"][\"best_model\"].toUpperCase() }}</div>\n                    </td>\n                    <td style=\"width:50%; background:#f7fafc; border-top:1px solid #d9e2ec; border-right:1px solid #d9e2ec; border-bottom:1px solid #d9e2ec; border-radius:0 8px 8px 0; padding:18px;\">\n                      <div style=\"font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:#667085; font-weight:700;\">Decision Rule</div>\n                      <div style=\"margin-top:8px; font-size:15px; line-height:1.5; color:#344054;\">The model with the lowest evaluation score is recommended for review and operational use.</div>\n                    </td>\n                  </tr>\n                </table>\n                <h2 style=\"margin:0 0 12px; font-size:18px; color:#182230;\">Model Evaluation Results</h2>\n                <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-collapse:collapse; border:1px solid #d9e2ec; border-radius:8px; overflow:hidden;\">\n                  <tr>\n                    <th align=\"left\" style=\"background:#f8fafc; color:#475467; font-size:12px; text-transform:uppercase; letter-spacing:.05em; padding:12px 14px; border-bottom:1px solid #d9e2ec;\">Model</th>\n                    <th align=\"right\" style=\"background:#f8fafc; color:#475467; font-size:12px; text-transform:uppercase; letter-spacing:.05em; padding:12px 14px; border-bottom:1px solid #d9e2ec;\">Evaluation Score</th>\n                    <th align=\"left\" style=\"background:#f8fafc; color:#475467; font-size:12px; text-transform:uppercase; letter-spacing:.05em; padding:12px 14px; border-bottom:1px solid #d9e2ec;\">Status</th>\n                  </tr>\n                  <tr>\n                    <td style=\"padding:14px; border-bottom:1px solid #edf2f7; font-size:14px; color:#182230; font-weight:700;\">SARIMA</td>\n                    <td align=\"right\" style=\"padding:14px; border-bottom:1px solid #edf2f7; font-size:14px; color:#182230; font-family:Consolas, monospace;\">{{ $node[\"Compare Models & Select Best\"].json[\"results\"][\"sarima_mae\"].toFixed(2) }}</td>\n                    <td style=\"padding:14px; border-bottom:1px solid #edf2f7; font-size:13px; color:#475467;\">{{ $node[\"Compare Models & Select Best\"].json[\"results\"][\"best_model\"] === \"sarima\" ? \"Recommended\" : \"Evaluated\" }}</td>\n                  </tr>\n                  <tr>\n                    <td style=\"padding:14px; border-bottom:1px solid #edf2f7; font-size:14px; color:#182230; font-weight:700;\">Prophet</td>\n                    <td align=\"right\" style=\"padding:14px; border-bottom:1px solid #edf2f7; font-size:14px; color:#182230; font-family:Consolas, monospace;\">{{ $node[\"Compare Models & Select Best\"].json[\"results\"][\"prophet_mae\"].toFixed(2) }}</td>\n                    <td style=\"padding:14px; border-bottom:1px solid #edf2f7; font-size:13px; color:#475467;\">{{ $node[\"Compare Models & Select Best\"].json[\"results\"][\"best_model\"] === \"prophet\" ? \"Recommended\" : \"Evaluated\" }}</td>\n                  </tr>\n                  <tr>\n                    <td style=\"padding:14px; font-size:14px; color:#182230; font-weight:700;\">LSTM Proxy</td>\n                    <td align=\"right\" style=\"padding:14px; font-size:14px; color:#182230; font-family:Consolas, monospace;\">{{ $node[\"Compare Models & Select Best\"].json[\"results\"][\"lstm_mae\"].toFixed(2) }}</td>\n                    <td style=\"padding:14px; font-size:13px; color:#475467;\">{{ $node[\"Compare Models & Select Best\"].json[\"results\"][\"best_model\"] === \"lstm\" ? \"Recommended\" : \"Evaluated\" }}</td>\n                  </tr>\n                </table>\n                <div style=\"margin:18px 0 0; padding:14px 16px; background:#fff8e6; border:1px solid #f3d58a; border-radius:8px; color:#594214; font-size:13px; line-height:1.55;\">\n                  <strong>Interpretation:</strong> lower values indicate better forecast quality for this comparison run. The selected model should be reviewed in MLflow before being promoted to any production forecasting decision.\n                </div>\n              </td>\n            </tr>\n            <tr>\n              <td style=\"padding:12px 32px 30px;\">\n                <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#f8fafc; border:1px solid #d9e2ec; border-radius:8px;\">\n                  <tr>\n                    <td style=\"padding:16px 18px;\">\n                      <div style=\"font-size:14px; font-weight:700; color:#182230; margin-bottom:8px;\">Workflow actions completed</div>\n                      <div style=\"font-size:13px; line-height:1.7; color:#475467;\">1. Trained SARIMA forecasting model<br>2. Trained Prophet forecasting model<br>3. Trained LSTM proxy forecasting model<br>4. Compared generated forecasts and selected the best candidate</div>\n                    </td>\n                  </tr>\n                </table>\n                <div style=\"text-align:center; margin-top:24px;\">\n                  <a href=\"http://localhost:5001\" style=\"display:inline-block; background:#175cd3; color:#ffffff; text-decoration:none; padding:12px 20px; border-radius:6px; font-size:14px; font-weight:700;\">Open MLflow Dashboard</a>\n                </div>\n              </td>\n            </tr>\n            <tr>\n              <td style=\"background:#f8fafc; border-top:1px solid #d9e2ec; padding:16px 32px; font-size:12px; line-height:1.5; color:#667085; text-align:center;\">Automated notification generated by the EventZella n8n forecasting pipeline. Please do not reply to this message.</td>\n            </tr>\n          </table>\n        </td>\n      </tr>\n    </table>\n  </body>\n</html>",
+        "toList": [
+          "your-email@gmail.com"
+        ]
+      },
+      "name": "Send Gmail Notification",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [
+        250,
+        1100
+      ],
+      "credentials": {
+        "googleGmailOAuth2Api": {
+          "id": "gmail-credential-id",
+          "name": "Gmail Account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Daily Trigger": {
+      "main": [
+        [
+          {
+            "node": "Train SARIMA Model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Train SARIMA Model": {
+      "main": [
+        [
+          {
+            "node": "Train Prophet Model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Train Prophet Model": {
+      "main": [
+        [
+          {
+            "node": "Train LSTM Model (MLP Proxy)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Train LSTM Model (MLP Proxy)": {
+      "main": [
+        [
+          {
+            "node": "Compare Models & Select Best",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compare Models & Select Best": {
+      "main": [
+        [
+          {
+            "node": "Send Gmail Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "id": "1"
+}

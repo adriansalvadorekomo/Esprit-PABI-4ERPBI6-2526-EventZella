@@ -1,0 +1,1504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Management — Star Schema</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,300&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base:      #0d0e11;
+            --bg-card:      #13151a;
+            --bg-elevated:  #1a1d24;
+            --bg-hover:     #21252f;
+
+            --fact-red:     #ff3358;
+            --fact-glow:    rgba(255, 51, 88, 0.35);
+
+            --blue:         #4dabf7;
+            --blue-dim:     rgba(77, 171, 247, 0.15);
+            --blue-glow:    rgba(77, 171, 247, 0.3);
+
+            --green:        #69db7c;
+            --green-dim:    rgba(105, 219, 124, 0.15);
+
+            --amber:        #ffa94d;
+            --amber-dim:    rgba(255, 169, 77, 0.15);
+
+            --purple:       #cc5de8;
+            --purple-dim:   rgba(204, 93, 232, 0.15);
+
+            --teal:         #38d9a9;
+            --teal-dim:     rgba(56, 217, 169, 0.15);
+
+            --text-1:       #f1f3f5;
+            --text-2:       #8b93a7;
+            --text-3:       #4e5668;
+
+            --border:       rgba(255,255,255,0.06);
+            --border-light: rgba(255,255,255,0.12);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg-base);
+            font-family: 'DM Sans', sans-serif;
+            color: var(--text-1);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ─── GRID TEXTURE ─── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ─── TOP BAR ─── */
+        .topbar {
+            position: relative;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 48px;
+            height: 56px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(13, 14, 17, 0.8);
+            backdrop-filter: blur(12px);
+        }
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .topbar-logo {
+            width: 28px;
+            height: 28px;
+            background: var(--fact-red);
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+        }
+        .topbar-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-1);
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+        .topbar-sep {
+            width: 1px;
+            height: 20px;
+            background: var(--border-light);
+        }
+        .topbar-sub {
+            font-size: 12px;
+            color: var(--text-2);
+            font-weight: 400;
+        }
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+        .badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 4px 10px;
+            border-radius: 3px;
+            border: 1px solid;
+        }
+        .badge-red    { color: var(--fact-red); border-color: rgba(255,51,88,0.4); background: rgba(255,51,88,0.08); }
+        .badge-blue   { color: var(--blue);     border-color: rgba(77,171,247,0.4); background: rgba(77,171,247,0.08); }
+        .badge-green  { color: var(--green);    border-color: rgba(105,219,124,0.4); background: rgba(105,219,124,0.08); }
+
+        /* ─── MAIN LAYOUT ─── */
+        .main {
+            position: relative;
+            z-index: 1;
+            padding: 40px 48px 60px;
+        }
+
+        /* ─── HERO HEADER ─── */
+        .hero {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 48px;
+            gap: 40px;
+        }
+        .hero-left h1 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 34px;
+            font-weight: 700;
+            color: var(--text-1);
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+            margin-bottom: 10px;
+        }
+        .hero-left h1 span { color: var(--fact-red); }
+        .hero-left p {
+            font-size: 14px;
+            color: var(--text-2);
+            line-height: 1.7;
+            max-width: 460px;
+        }
+        .hero-stats {
+            display: flex;
+            gap: 24px;
+            flex-shrink: 0;
+        }
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 18px 24px;
+            text-align: center;
+            min-width: 110px;
+        }
+        .stat-card .val {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-1);
+            line-height: 1;
+        }
+        .stat-card .val.red    { color: var(--fact-red); }
+        .stat-card .val.blue   { color: var(--blue); }
+        .stat-card .val.green  { color: var(--green); }
+        .stat-card .val.purple { color: var(--purple); }
+        .stat-card .lbl {
+            font-size: 10px;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-top: 6px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* ─── DIAGRAM SECTION ─── */
+        .diagram-wrapper {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 48px;
+        }
+        .diagram-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+        }
+        .diagram-header-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--text-2);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+        .diagram-header-left span { color: var(--blue); }
+        .diagram-header-right {
+            display: flex;
+            gap: 8px;
+        }
+        .dot { width: 10px; height: 10px; border-radius: 50%; }
+        .dot-red  { background: #ff5f57; }
+        .dot-amb  { background: #febc2e; }
+        .dot-grn  { background: #28c840; }
+
+        .diagram-canvas {
+            position: relative;
+            width: 1500px;
+            height: 1560px;
+            margin: 0 auto;
+        }
+
+        /* ─── SVG CONNECTIONS ─── */
+        .svg-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 1500px;
+            height: 1560px;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        /* ─── FACT TABLE ─── */
+        .fact {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 20;
+            width: 320px;
+            background: var(--bg-elevated);
+            border: 2px solid var(--fact-red);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow:
+                0 0 0 1px rgba(255,51,88,0.15),
+                0 0 40px rgba(255,51,88,0.2),
+                0 0 80px rgba(255,51,88,0.08),
+                0 24px 64px rgba(0,0,0,0.6);
+        }
+        .fact-header {
+            background: linear-gradient(135deg, #ff3358, #c41b37);
+            padding: 14px 18px;
+        }
+        .fact-header-top {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+        .fact-icon {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .fact-tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            background: rgba(255,255,255,0.2);
+            padding: 2px 7px;
+            border-radius: 3px;
+            color: #fff;
+        }
+        .fact-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: 0.02em;
+        }
+        .fact-body {
+            padding: 12px 18px;
+        }
+        .fact-section-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--fact-red);
+            margin-bottom: 6px;
+            margin-top: 10px;
+            opacity: 0.8;
+        }
+        .fact-section-label:first-child { margin-top: 0; }
+        .fact-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 2px 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10.5px;
+        }
+        .fact-row .fname { color: var(--text-2); }
+        .fact-row .ftype {
+            font-size: 9px;
+            color: var(--text-3);
+        }
+        .fact-row .fk-tag {
+            font-size: 8px;
+            color: var(--fact-red);
+            background: rgba(255,51,88,0.1);
+            border: 1px solid rgba(255,51,88,0.3);
+            padding: 1px 5px;
+            border-radius: 2px;
+        }
+        .fact-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 8px 0;
+        }
+
+        /* ─── DIMENSION TABLES ─── */
+        .dim {
+            position: absolute;
+            z-index: 10;
+            width: 198px;
+            background: var(--bg-card);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease, z-index 0s;
+        }
+        .dim:hover {
+            transform: translateY(-6px) scale(1.03);
+            z-index: 30;
+        }
+        .dim-header {
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+        .dim-icon {
+            font-size: 13px;
+            opacity: 0.8;
+        }
+        .dim-info { flex: 1; }
+        .dim-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-1);
+            letter-spacing: 0.02em;
+        }
+        .dim-type {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 8.5px;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-top: 1px;
+        }
+        .dim-body {
+            padding: 8px 14px 10px;
+        }
+        .dim-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 2px 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9.5px;
+        }
+        .dim-row .col-name { color: var(--text-2); }
+        .dim-row .col-type { color: var(--text-3); font-size: 8.5px; }
+        .dim-row .pk-tag {
+            font-size: 7.5px;
+            color: #ffd43b;
+            background: rgba(255,212,59,0.12);
+            border: 1px solid rgba(255,212,59,0.3);
+            padding: 1px 4px;
+            border-radius: 2px;
+            margin-left: 4px;
+        }
+        .dim-row .etl-tag {
+            font-size: 7.5px;
+            color: var(--text-3);
+            background: rgba(255,255,255,0.04);
+            padding: 1px 4px;
+            border-radius: 2px;
+        }
+        .dim-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 14px;
+            border-top: 1px solid var(--border);
+        }
+        .dim-rel {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 8px;
+            color: var(--text-3);
+        }
+        .dim-rel strong { color: var(--blue); }
+        .dim-fk {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 8px;
+            font-weight: 600;
+        }
+
+        /* Color themes per dimension category */
+        .dim.cat-business { border-color: rgba(77,171,247,0.35); }
+        .dim.cat-business:hover { border-color: rgba(77,171,247,0.7); box-shadow: 0 12px 40px rgba(77,171,247,0.2); }
+        .dim.cat-business .dim-header { background: var(--blue-dim); }
+        .dim.cat-business .dim-type { color: var(--blue); opacity: 0.7; }
+        .dim.cat-business .dim-fk { color: var(--blue); }
+
+        .dim.cat-time { border-color: rgba(105,219,124,0.35); }
+        .dim.cat-time:hover { border-color: rgba(105,219,124,0.7); box-shadow: 0 12px 40px rgba(105,219,124,0.2); }
+        .dim.cat-time .dim-header { background: var(--green-dim); }
+        .dim.cat-time .dim-type { color: var(--green); opacity: 0.7; }
+        .dim.cat-time .dim-fk { color: var(--green); }
+
+        .dim.cat-customer { border-color: rgba(255,169,77,0.35); }
+        .dim.cat-customer:hover { border-color: rgba(255,169,77,0.7); box-shadow: 0 12px 40px rgba(255,169,77,0.2); }
+        .dim.cat-customer .dim-header { background: var(--amber-dim); }
+        .dim.cat-customer .dim-type { color: var(--amber); opacity: 0.7; }
+        .dim.cat-customer .dim-fk { color: var(--amber); }
+
+        .dim.cat-analytics { border-color: rgba(204,93,232,0.35); }
+        .dim.cat-analytics:hover { border-color: rgba(204,93,232,0.7); box-shadow: 0 12px 40px rgba(204,93,232,0.2); }
+        .dim.cat-analytics .dim-header { background: var(--purple-dim); }
+        .dim.cat-analytics .dim-type { color: var(--purple); opacity: 0.7; }
+        .dim.cat-analytics .dim-fk { color: var(--purple); }
+
+        .dim.cat-service { border-color: rgba(56,217,169,0.35); }
+        .dim.cat-service:hover { border-color: rgba(56,217,169,0.7); box-shadow: 0 12px 40px rgba(56,217,169,0.2); }
+        .dim.cat-service .dim-header { background: var(--teal-dim); }
+        .dim.cat-service .dim-type { color: var(--teal); opacity: 0.7; }
+        .dim.cat-service .dim-fk { color: var(--teal); }
+
+        /* ─── LEGEND ─── */
+        .legend {
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            z-index: 30;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px 18px;
+        }
+        .legend-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-3);
+            margin-bottom: 10px;
+        }
+        .legend-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 6px 0;
+        }
+        .legend-dot {
+            width: 8px; height: 8px;
+            border-radius: 2px;
+        }
+        .legend-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9.5px;
+            color: var(--text-2);
+        }
+
+        /* ─── RELATIONSHIP ARROWS LEGEND ─── */
+        .rel-legend {
+            position: absolute;
+            bottom: 24px;
+            left: 24px;
+            z-index: 30;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px 18px;
+        }
+        .rel-legend-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-3);
+            margin-bottom: 10px;
+        }
+        .rel-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 6px 0;
+        }
+        .rel-line { width: 28px; height: 2px; }
+        .rel-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9.5px;
+            color: var(--text-2);
+        }
+
+        /* ─── DOCUMENTATION SECTION ─── */
+        .docs-section {
+            margin-top: 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+        .docs-section.wide {
+            grid-template-columns: 1fr;
+        }
+        .doc-block {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .doc-block-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-elevated);
+        }
+        .doc-block-icon {
+            font-size: 16px;
+        }
+        .doc-block-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-1);
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+        .doc-block-body {
+            padding: 20px 24px;
+        }
+
+        /* Table styles */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+        }
+        .data-table thead th {
+            text-align: left;
+            padding: 8px 12px;
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-3);
+            border-bottom: 1px solid var(--border);
+        }
+        .data-table tbody tr {
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            transition: background 0.15s;
+        }
+        .data-table tbody tr:hover {
+            background: var(--bg-elevated);
+        }
+        .data-table tbody td {
+            padding: 8px 12px;
+            color: var(--text-2);
+            font-size: 11px;
+            vertical-align: middle;
+        }
+        .data-table tbody td:first-child {
+            color: var(--text-1);
+            font-weight: 500;
+        }
+        .t-badge {
+            display: inline-block;
+            font-size: 9px;
+            padding: 2px 7px;
+            border-radius: 3px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+        }
+        .t-blue   { color: var(--blue);   background: var(--blue-dim);   border: 1px solid rgba(77,171,247,0.3); }
+        .t-green  { color: var(--green);  background: var(--green-dim);  border: 1px solid rgba(105,219,124,0.3); }
+        .t-amber  { color: var(--amber);  background: var(--amber-dim);  border: 1px solid rgba(255,169,77,0.3); }
+        .t-purple { color: var(--purple); background: var(--purple-dim); border: 1px solid rgba(204,93,232,0.3); }
+        .t-teal   { color: var(--teal);   background: var(--teal-dim);   border: 1px solid rgba(56,217,169,0.3); }
+        .t-red    { color: var(--fact-red); background: rgba(255,51,88,0.1); border: 1px solid rgba(255,51,88,0.3); }
+        .t-dim    { color: var(--text-3); background: rgba(255,255,255,0.04); border: 1px solid var(--border); }
+
+        .card-row {
+            display: flex;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .info-card {
+            flex: 1;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px 18px;
+        }
+        .info-card-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 6px;
+        }
+        .info-card-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-1);
+        }
+        .info-card-value.c-red    { color: var(--fact-red); }
+        .info-card-value.c-blue   { color: var(--blue); }
+        .info-card-value.c-green  { color: var(--green); }
+        .info-card-value.c-purple { color: var(--purple); }
+        .info-card-sub {
+            font-size: 11px;
+            color: var(--text-3);
+            margin-top: 3px;
+        }
+
+        /* Code block */
+        .code-block {
+            background: var(--bg-base);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            line-height: 1.8;
+            color: var(--text-2);
+            margin: 12px 0;
+        }
+        .code-block .kw   { color: #cc5de8; }
+        .code-block .fn   { color: #4dabf7; }
+        .code-block .str  { color: #69db7c; }
+        .code-block .cmt  { color: var(--text-3); font-style: italic; }
+        .code-block .num  { color: #ffa94d; }
+        .code-block .op   { color: var(--text-2); }
+
+        /* SCD pill */
+        .scd1 { color: var(--teal);   background: var(--teal-dim);   border: 1px solid rgba(56,217,169,0.3); }
+        .scd2 { color: var(--amber);  background: var(--amber-dim);  border: 1px solid rgba(255,169,77,0.3); }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 32px 48px;
+            border-top: 1px solid var(--border);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: var(--text-3);
+            letter-spacing: 0.05em;
+        }
+        .footer span { color: var(--text-2); }
+    </style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<nav class="topbar">
+    <div class="topbar-left">
+        <div class="topbar-logo"></div>
+        <div class="topbar-title">Event Management</div>
+        <div class="topbar-sep"></div>
+        <div class="topbar-sub">Star Schema / Dimensional Model</div>
+    </div>
+    <div class="topbar-right">
+        <span class="badge badge-red">FACT ×1</span>
+        <span class="badge badge-blue">DIM ×14</span>
+        <span class="badge badge-green">FK ×17</span>
+    </div>
+</nav>
+
+<div class="main">
+
+    <!-- HERO -->
+    <div class="hero">
+        <div class="hero-left">
+            <h1>Star Schema<br><span>Event Management</span></h1>
+            <p>Dimensional data warehouse model for event analytics. One central fact table connected to 14 dimension tables via 17 foreign keys, enabling multi-axis analysis across business, time, customer, service, and analytics layers.</p>
+        </div>
+        <div class="hero-stats">
+            <div class="stat-card">
+                <div class="val red">1</div>
+                <div class="lbl">Fact Table</div>
+            </div>
+            <div class="stat-card">
+                <div class="val blue">14</div>
+                <div class="lbl">Dimensions</div>
+            </div>
+            <div class="stat-card">
+                <div class="val green">17</div>
+                <div class="lbl">FK Relations</div>
+            </div>
+            <div class="stat-card">
+                <div class="val purple">13</div>
+                <div class="lbl">Measures</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DIAGRAM -->
+    <div class="diagram-wrapper">
+        <div class="diagram-header">
+            <div class="diagram-header-left">
+                🗂 <span>SCHEMA DIAGRAM</span> — Kimball Dimensional Model — All relationships are 1:N (DIM → FACT)
+            </div>
+            <div class="diagram-header-right">
+                <div class="dot dot-red"></div>
+                <div class="dot dot-amb"></div>
+                <div class="dot dot-grn"></div>
+            </div>
+        </div>
+
+        <div style="overflow:auto">
+        <div class="diagram-canvas">
+
+            <!-- SVG CONNECTIONS -->
+            <svg class="svg-layer" style="position:absolute;top:0;left:0;width:1500px;height:1560px;pointer-events:none;z-index:2;" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <!-- Glow filter -->
+                    <filter id="gl" x="-50%" y="-50%" width="200%" height="200%">
+                        <feGaussianBlur stdDeviation="3" result="blur"/>
+                        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                    </filter>
+                    <!-- Arrow markers per color -->
+                    <marker id="arr-blue"   markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+                        <path d="M0,0 L0,6 L8,3 z" fill="#4dabf7"/>
+                    </marker>
+                    <marker id="arr-green"  markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+                        <path d="M0,0 L0,6 L8,3 z" fill="#69db7c"/>
+                    </marker>
+                    <marker id="arr-amber"  markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+                        <path d="M0,0 L0,6 L8,3 z" fill="#ffa94d"/>
+                    </marker>
+                    <marker id="arr-purple" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+                        <path d="M0,0 L0,6 L8,3 z" fill="#cc5de8"/>
+                    </marker>
+                    <marker id="arr-teal"   markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+                        <path d="M0,0 L0,6 L8,3 z" fill="#38d9a9"/>
+                    </marker>
+                </defs>
+
+                <!-- ══════════════════════════════════════════
+                     FACT center: x=750, y=780
+                     FACT top border: y=625   bottom: y=935
+                     FACT left border: x=590  right:  x=910
+                     ══════════════════════════════════════════ -->
+
+                <!-- ── BUSINESS (blue) ── -->
+
+                <!-- Dim_Event: top:60 left:651 → card bottom center = x=750, y=182 -->
+                <line x1="750" y1="182" x2="750" y2="622"
+                      stroke="#4dabf7" stroke-width="2.5" stroke-dasharray="0"
+                      opacity="0.9" marker-end="url(#arr-blue)"/>
+                <text x="758" y="215" fill="#4dabf7" font-family="JetBrains Mono" font-size="11" font-weight="700">1</text>
+                <text x="758" y="610" fill="#4dabf7" font-family="JetBrains Mono" font-size="11" font-weight="700">N</text>
+
+                <!-- Dim_Reservation: top:120 left:280 → card right center = x=479, y=230 -->
+                <line x1="479" y1="230" x2="680" y2="668"
+                      stroke="#4dabf7" stroke-width="2.5" opacity="0.9"
+                      marker-end="url(#arr-blue)"/>
+                <text x="490" y="262" fill="#4dabf7" font-family="JetBrains Mono" font-size="11" font-weight="700">1</text>
+                <text x="678" y="658" fill="#4dabf7" font-family="JetBrains Mono" font-size="11" font-weight="700">N</text>
+
+                <!-- Dim_Service: top:120 left:1022 → card left center = x=1022, y=230 -->
+                <line x1="1022" y1="230" x2="821" y2="668"
+                      stroke="#4dabf7" stroke-width="2.5" opacity="0.9"
+                      marker-end="url(#arr-blue)"/>
+                <text x="1005" y="262" fill="#4dabf7" font-family="JetBrains Mono" font-size="11" font-weight="700">1</text>
+                <text x="823" y="658" fill="#4dabf7" font-family="JetBrains Mono" font-size="11" font-weight="700">N</text>
+
+                <!-- ── CUSTOMER (amber) ── -->
+
+                <!-- Dim_Beneficiary: top:295 left:5 → card right center = x=204, y=405 -->
+                <line x1="204" y1="405" x2="589" y2="720"
+                      stroke="#ffa94d" stroke-width="2.5" opacity="0.9"
+                      marker-end="url(#arr-amber)"/>
+                <text x="218" y="398" fill="#ffa94d" font-family="JetBrains Mono" font-size="11" font-weight="700">1</text>
+                <text x="580" y="713" fill="#ffa94d" font-family="JetBrains Mono" font-size="11" font-weight="700">N</text>
+
+                <!-- Dim_Complaint: top:295 left:1297 → card left center = x=1297, y=405 -->
+                <line x1="1297" y1="405" x2="911" y2="720"
+                      stroke="#ffa94d" stroke-width="2.5" opacity="0.9"
+                      marker-end="url(#arr-amber)"/>
+                <text x="1270" y="398" fill="#ffa94d" font-family="JetBrains Mono" font-size="11" font-weight="700">1</text>
+                <text x="912" y="713" fill="#ffa94d" font-family="JetBrains Mono" font-size="11" font-weight="700">N</text>
+
+                <!-- Dim_Evaluation: top:545 left:5 → card right center = x=204, y=645 -->
+                <line x1="204" y1="645" x2="589" y2="755"
+                      stroke="#ffa94d" stroke-width="2.5" opacity="0.9"
+                      marker-end="url(#arr-amber)"/>
+                <text x="218" y="638" fill="#ffa94d" font-family="JetBrains Mono" font-size="11" font-weight="700">1</text>
+                <text x="580" y="748" fill="#ffa94d" font-family="JetBrains Mono" font-size="11" font-weight="700">N</text>
+
+                <!-- ── SERVICE (teal) ── -->
+
+                <!-- Dim_Provider: top:800 left:5 → card right center = x=204, y=880 -->
+                <line x1="204" y1="880" x2="589" y2="810"
+                      stroke="#38d9a9" stroke-width="2.5" opacity="0.9"
+                      marker-end="url(#arr-teal)"/>
+                <text x="218" y="873" fill="#38d9a9" font-family="JetBrains Mono" font-size="11" font-weight="700">1</text>
+                <text x="580" y="817" fill="#38d9a9" font-family="JetBrains Mono" font-size="11" font-weight="700">N</text>
+
+                <!-- Dim_Category: top:545 left:1297 → card left center = x=1297, y=645 -->
+                <line x1="1297" y1="645" x2="911" y2="755"
+                      stroke="#38d9a9" stroke-width="2.5" opacity="0.9"
+                      marker-end="url(#arr-teal)"/>
+                <text x="1270" y="638" fill="#38d9a9" font-family="JetBrains Mono" font-size="11" font-weight="700">1</text>
+                <text x="912" y="748" fill="#38d9a9" font-family="JetBrains Mono" font-size="11" font-weight="700">N</text>
+
+                <!-- ── TIME (green) ── -->
+
+                <!-- Dim_Date: top:800 left:1297 → card left center = x=1297, y=880 -->
+                <line x1="1297" y1="880" x2="911" y2="810"
+                      stroke="#69db7c" stroke-width="2.5" opacity="0.9"
+                      marker-end="url(#arr-green)"/>
+                <text x="1270" y="873" fill="#69db7c" font-family="JetBrains Mono" font-size="11" font-weight="700">1</text>
+                <text x="912" y="817" fill="#69db7c" font-family="JetBrains Mono" font-size="11" font-weight="700">N</text>
+
+                <!-- Dim_Season: top:1020 left:1297 → card left center = x=1297, y=1100 -->
+                <line x1="1297" y1="1100" x2="911" y2="848"
+                      stroke="#69db7c" stroke-width="2.5" opacity="0.9"
+                      marker-end="url(#arr-green)"/>
+                <text x="1270" y="1093" fill="#69db7c" font-family="JetBrains Mono" font-size="11" font-weight="700">1</text>
+                <text x="912" y="842" fill="#69db7c" font-family="JetBrains Mono" font-size="11" font-weight="700">N</text>
+
+                <!-- ── ANALYTICS (purple) ── -->
+
+                <!-- Dim_Location: top:1020 left:5 → card right center = x=204, y=1100 -->
+                <line x1="204" y1="1100" x2="589" y2="848"
+                      stroke="#cc5de8" stroke-width="2.5" opacity="0.9"
+                      marker-end="url(#arr-purple)"/>
+                <text x="218" y="1093" fill="#cc5de8" font-family="JetBrains Mono" font-size="11" font-weight="700">1</text>
+                <text x="580" y="842" fill="#cc5de8" font-family="JetBrains Mono" font-size="11" font-weight="700">N</text>
+
+                <!-- Dim_Reviews: top:1170 left:231 → card top center = x=330, y=1170 -->
+                <line x1="430" y1="1170" x2="692" y2="938"
+                      stroke="#cc5de8" stroke-width="2.5" opacity="0.9"
+                      marker-end="url(#arr-purple)"/>
+                <text x="444" y="1163" fill="#cc5de8" font-family="JetBrains Mono" font-size="11" font-weight="700">1</text>
+                <text x="685" y="930" fill="#cc5de8" font-family="JetBrains Mono" font-size="11" font-weight="700">N</text>
+
+                <!-- Dim_Marketing_Spend: top:1220 left:651 → card top center = x=750, y=1220 -->
+                <line x1="750" y1="1220" x2="750" y2="938"
+                      stroke="#cc5de8" stroke-width="2.5" opacity="0.9"
+                      marker-end="url(#arr-purple)"/>
+                <text x="760" y="1250" fill="#cc5de8" font-family="JetBrains Mono" font-size="11" font-weight="700">1</text>
+                <text x="760" y="952" fill="#cc5de8" font-family="JetBrains Mono" font-size="11" font-weight="700">N</text>
+
+                <!-- Dim_Competitor: top:1170 left:1071 → card top center = x=1170, y=1170 -->
+                <line x1="1071" y1="1170" x2="808" y2="938"
+                      stroke="#cc5de8" stroke-width="2.5" opacity="0.9"
+                      marker-end="url(#arr-purple)"/>
+                <text x="1058" y="1163" fill="#cc5de8" font-family="JetBrains Mono" font-size="11" font-weight="700">1</text>
+                <text x="815" y="930" fill="#cc5de8" font-family="JetBrains Mono" font-size="11" font-weight="700">N</text>
+            </svg>
+
+            <!-- ══════════ FACT TABLE ══════════ -->
+            <div class="fact">
+                <div class="fact-header">
+                    <div class="fact-header-top">
+                        <span class="fact-icon">📌</span>
+                        <span class="fact-tag">FACT</span>
+                    </div>
+                    <div class="fact-name">Fact_Event_Management</div>
+                </div>
+                <div class="fact-body">
+                    <div class="fact-section-label">Foreign Keys (17)</div>
+                    <div class="fact-row"><span class="fname">fk_reservation</span><span class="fk-tag">FK</span></div>
+                    <div class="fact-row"><span class="fname">fk_service</span><span class="fk-tag">FK</span></div>
+                    <div class="fact-row"><span class="fname">fk_evaluation</span><span class="fk-tag">FK</span></div>
+                    <div class="fact-row"><span class="fname">fk_event</span><span class="fk-tag">FK</span></div>
+                    <div class="fact-row"><span class="fname">fk_marketing_spend</span><span class="fk-tag">FK</span></div>
+                    <div class="fact-row"><span class="fname">fk_category</span><span class="fk-tag">FK</span></div>
+                    <div class="fact-row"><span class="fname">fk_location</span><span class="fk-tag">FK</span></div>
+                    <div class="fact-row"><span class="fname">fk_season</span><span class="fk-tag">FK</span></div>
+                    <div class="fact-row"><span class="fname">fk_reviews</span><span class="fk-tag">FK</span></div>
+                    <div class="fact-row"><span class="fname">fk_beneficiary</span><span class="fk-tag">FK</span></div>
+                    <div class="fact-row"><span class="fname">fk_provider</span><span class="fk-tag">FK</span></div>
+                    <div class="fact-row"><span class="fname">fk_complaint</span><span class="fk-tag">FK</span></div>
+                    <div class="fact-row"><span class="fname">fk_competitor</span><span class="fk-tag">FK</span></div>
+                    <div class="fact-row"><span class="fname">fk_event_date</span><span class="fk-tag">FK</span></div>
+                    <div class="fact-row"><span class="fname">fk_reservation_date</span><span class="fk-tag">FK</span></div>
+                    <div class="fact-row"><span class="fname">fk_date_visitor</span><span class="fk-tag">FK</span></div>
+                    <div class="fact-row"><span class="fname">fk_marketing_spend_year_month</span><span class="fk-tag">FK</span></div>
+                    <div class="fact-divider"></div>
+                    <div class="fact-section-label">Measures (13)</div>
+                    <div class="fact-row"><span class="fname">price_services</span><span class="ftype">float</span></div>
+                    <div class="fact-row"><span class="fname">budget_events</span><span class="ftype">float</span></div>
+                    <div class="fact-row"><span class="fname">final_price_reservation</span><span class="ftype">float</span></div>
+                    <div class="fact-row"><span class="fname">marketing_spend</span><span class="ftype">float</span></div>
+                    <div class="fact-row"><span class="fname">new_beneficiaries</span><span class="ftype">float</span></div>
+                    <div class="fact-row"><span class="fname">reservation_visits_count</span><span class="ftype">float</span></div>
+                    <div class="fact-row"><span class="fname">visitor_count</span><span class="ftype">int</span></div>
+                    <div class="fact-row"><span class="fname">rating_evaluation</span><span class="ftype">float</span></div>
+                    <div class="fact-row"><span class="fname">starting_price_competitor</span><span class="ftype">float</span></div>
+                    <div class="fact-row"><span class="fname">rating_stars_competitor</span><span class="ftype">float</span></div>
+                    <div class="fact-row"><span class="fname">rating_quality_price</span><span class="ftype">float</span></div>
+                    <div class="fact-row"><span class="fname">rating_features</span><span class="ftype">float</span></div>
+                    <div class="fact-row"><span class="fname">rating_reviews</span><span class="ftype">float</span></div>
+                </div>
+            </div>
+
+            <!-- ══════════ DIMENSIONS ══════════ -->
+
+            <!-- TOP CENTER: EVENT -->
+            <div class="dim cat-business" style="top:60px; left:651px;">
+                <div class="dim-header">
+                    <span class="dim-icon">📅</span>
+                    <div class="dim-info">
+                        <div class="dim-name">Dim_Event</div>
+                        <div class="dim-type">Business Context</div>
+                    </div>
+                </div>
+                <div class="dim-body">
+                    <div class="dim-row"><span class="col-name">event_id<span class="pk-tag">PK</span></span><span class="col-type">int</span></div>
+                    <div class="dim-row"><span class="col-name">bk_beneficiary</span><span class="col-type">int</span></div>
+                    <div class="dim-row"><span class="col-name">title</span><span class="col-type">string</span></div>
+                    <div class="dim-row"><span class="col-name">type</span><span class="col-type">string</span></div>
+                    <div class="dim-row"><span class="col-name">event_date</span><span class="col-type">date</span></div>
+                    <div class="dim-row"><span class="col-name">created_at</span><span class="etl-tag">ETL</span></div>
+                    <div class="dim-row"><span class="col-name">updated_at</span><span class="etl-tag">ETL</span></div>
+                    <div class="dim-row"><span class="col-name">source_system</span><span class="etl-tag">ETL</span></div>
+                    <div class="dim-row"><span class="col-name">etl_batch</span><span class="etl-tag">ETL</span></div>
+                </div>
+                <div class="dim-footer">
+                    <span class="dim-rel"><strong>1:N</strong> → FACT</span>
+                    <span class="dim-fk">fk_event</span>
+                </div>
+            </div>
+
+            <!-- TOP-LEFT: RESERVATION -->
+            <div class="dim cat-business" style="top:120px; left:280px;">
+                <div class="dim-header">
+                    <span class="dim-icon">🎫</span>
+                    <div class="dim-info">
+                        <div class="dim-name">Dim_Reservation</div>
+                        <div class="dim-type">Business Context</div>
+                    </div>
+                </div>
+                <div class="dim-body">
+                    <div class="dim-row"><span class="col-name">reservation_id<span class="pk-tag">PK</span></span><span class="col-type">int</span></div>
+                    <div class="dim-row"><span class="col-name">bk_services</span><span class="col-type">int</span></div>
+                    <div class="dim-row"><span class="col-name">bk_events</span><span class="col-type">int</span></div>
+                    <div class="dim-row"><span class="col-name">status</span><span class="col-type">string</span></div>
+                    <div class="dim-row"><span class="col-name">reservation_date</span><span class="col-type">date</span></div>
+                    <div class="dim-row"><span class="col-name">created_at</span><span class="etl-tag">ETL</span></div>
+                    <div class="dim-row"><span class="col-name">updated_at</span><span class="etl-tag">ETL</span></div>
+                    <div class="dim-row"><span class="col-name">source_data</span><span class="etl-tag">ETL</span></div>
+                    <div class="dim-row"><span class="col-name">etl_batch</span><span class="etl-tag">ETL</span></div>
+                </div>
+                <div class="dim-footer">
+                    <span class="dim-rel"><strong>1:N</strong> → FACT</span>
+                    <span class="dim-fk">fk_reservation</span>
+                </div>
+            </div>
+
+            <!-- TOP-RIGHT: SERVICE -->
+            <div class="dim cat-business" style="top:120px; left:1022px;">
+                <div class="dim-header">
+                    <span class="dim-icon">💼</span>
+                    <div class="dim-info">
+                        <div class="dim-name">Dim_Service</div>
+                        <div class="dim-type">Business Context</div>
+                    </div>
+                </div>
+                <div class="dim-body">
+                    <div class="dim-row"><span class="col-name">service_id<span class="pk-tag">PK</span></span><span class="col-type">int</span></div>
+                    <div class="dim-row"><span class="col-name">bk_category</span><span class="col-type">int</span></div>
+                    <div class="dim-row"><span class="col-name">description</span><span class="col-type">string</span></div>
+                    <div class="dim-row"><span class="col-name">title</span><span class="col-type">string</span></div>
+                    <div class="dim-row"><span class="col-name">created_at</span><span class="etl-tag">ETL</span></div>
+                    <div class="dim-row"><span class="col-name">updated_at</span><span class="etl-tag">ETL</span></div>
+                    <div class="dim-row"><span class="col-name">source_data</span><span class="etl-tag">ETL</span></div>
+                    <div class="dim-row"><span class="col-name">etl_batch</span><span class="etl-tag">ETL</span></div>
+                </div>
+                <div class="dim-footer">
+                    <span class="dim-rel"><strong>1:N</strong> → FACT</span>
+                    <span class="dim-fk">fk_service</span>
+                </div>
+            </div>
+
+            <!-- LEFT-UPPER: BENEFICIARY -->
+            <div class="dim cat-customer" style="top:295px; left:5px;">
+                <div class="dim-header">
+                    <span class="dim-icon">👤</span>
+                    <div class="dim-info">
+                        <div class="dim-name">Dim_Beneficiary</div>
+                        <div class="dim-type">Customer Journey</div>
+                    </div>
+                </div>
+                <div class="dim-body">
+                    <div class="dim-row"><span class="col-name">beneficiary_id<span class="pk-tag">PK</span></span><span class="col-type">int</span></div>
+                    <div class="dim-row"><span class="col-name">first_name</span><span class="col-type">string</span></div>
+                    <div class="dim-row"><span class="col-name">last_name</span><span class="col-type">string</span></div>
+                    <div class="dim-row"><span class="col-name">email</span><span class="col-type">string</span></div>
+                    <div class="dim-row"><span class="col-name">phone</span><span class="col-type">string</span></div>
+                    <div class="dim-row"><span class="col-name">created_at</span><span class="etl-tag">ETL</span></div>
+                    <div class="dim-row"><span class="col-name">updated_at</span><span class="etl-tag">ETL</span></div>
+                    <div class="dim-row"><span class="col-name">source_data</span><span class="etl-tag">ETL</span></div>
+                    <div class="dim-row"><span class="col-name">etl_batch</span><span class="etl-tag">ETL</span></div>
+                </div>
+                <div class="dim-footer">
+                    <span class="dim-rel"><strong>1:N</strong> → FACT</span>
+                    <span class="dim-fk">fk_beneficiary</span>
+                </div>
+            </div>
+
+            <!-- RIGHT-UPPER: COMPLAINT -->
+            <div class="dim cat-customer" style="top:295px; left:1297px;">
+                <div class="dim-header">
+                    <span class="dim-icon">⚠️</span>
+                    <div class="dim-info">
+                        <div class="dim-name">Dim_Complaint</div>
+                        <div class="dim-type">Customer Journey</div>
+                    </div>
+                </div>
+                <div class="dim-body">
+                    <div class="dim-row"><span class="col-name">complaint_id<span class="pk-tag">PK</span></span><span class="col-type">int</span></div>
+                    <div class="dim-row"><span class="col-name">bk_beneficiary</span><span class="col-type">int</span></div>
+                    <div class="dim-row"><span class="col-name">bk_provider</span><span class="col-type">int</span></div>
+                    <div class="dim-row"><span class="col-name">subject</span><span class="col-type">string</span></div>
+                    <div class="dim-row"><span class="col-name">description</span><span class="col-type">string</span></div>
+                    <div class="dim-row"><span class="col-name">status</span><span class="col-type">string</span></div>
+                    <div class="dim-row"><span class="col-name">created_at</span><span class="etl-tag">ETL</span></div>
+                    <div class="dim-row"><span class="col-name">updated_at</span><span class="etl-tag">ETL</span></div>
+                    <div class="dim-row"><span class="col-name">source_data</span><span class="etl-tag">ETL</span></div>
+                    <div class="dim-row"><span class="col-name">etl_batch</span><span class="etl-tag">ETL</span></div>
+                </div>
+                <div class="dim-footer">
+                    <span class="dim-rel"><strong>1:N</strong> → FACT</span>
+                    <span class="dim-fk">fk_complaint</span>
+                </div>
+            </div>
+
+            <!-- LEFT-MID: EVALUATION -->
+            <div class="dim cat-customer" style="top:545px; left:5px;">
+                <div class="dim-header">
+                    <span class="dim-icon">⭐</span>
+                    <div class="dim-info">
+                        <div class="dim-name">Dim_Evaluation</div>
+                        <div class="dim-type">Customer Journey</div>
+                    </div>
+                </div>
+                <div class="dim-body">
+                    <div class="dim-row"><span class="col-name">evaluation_id<span class="pk-tag">PK</span></span><span class="col-type">int</span></div>
+                    <div class="dim-row"><span class="col-name">bk_reservation</span><span class="col-type">int</span></div>
+                    <div class="dim-row"><span class="col-name">comment</span><span class="col-type">string</span></div>
+                    <div class="dim-row"><span class="col-name">created_at</span><span class="etl-tag">ETL</span></div>
+                    <div class="dim-row"><span class="col-name">updated_at</span><span class="etl-tag">ETL</span></div>
+                    <div class="dim-row"><span class="col-name">source_data</span><span class="etl-tag">ETL</span></div>
+                    <div class="dim-row"><span class="col-name">etl_batch</span><span class="etl-tag">ETL</span></div>
+                </div>
+                <div class="dim-footer">
+                    <span class="dim-rel"><strong>1:N</strong> → FACT</span>
+                    <span class="dim-fk">fk_evaluation</span>
+                </div>
+            </div>
+
+            <!-- RIGHT-MID: CATEGORY -->
+            <div class="dim cat-service" style="top:545px; left:1297px;">
+                <div class="dim-header">
+                    <span class="dim-icon">📁</span>
+                    <div class="dim-info">
+                        <div class="dim-name">Dim_Category</div>
+                        <div class="dim-type">Service Delivery</div>
+                    </div>
+                </div>
+                <div class="dim-body">
+                    <div class="dim-row"><span class="col-name">category_id<span class="pk-tag">PK</span></span><span class="col-type">int</span></div>
+                    <div class="dim-row"><span class="col-name">category_name</span><span class="col-type">string</span></div>
+                    <div class="dim-row"><span class="col-name">subcategory_name</span><span class="col-type">string</span></div>
+                    <div class="dim-row"><span class="col-name">created_at</span><span class="etl-tag">ETL</span></div>
+                    <div class="dim-row"><span class="col-name">updated_at</span><span class="etl-tag">ETL</span></div>
+                    <div class="dim-row"><span class="col-name">source_data</span><span class="etl-tag">ETL</span></div>
+                    <div class="dim-row"><span class="col-name">etl_batch</span><span class="etl-tag">ETL</span></div>
+                </div>
+                <div class="dim-footer">
+                    <span class="dim-rel"><strong>1:N</strong> → FACT</span>
+                    <span class="dim-fk">fk_category</span>
+                </div>
+            </div>
+
+            <!-- LEFT-LOWER: PROVIDER -->
+            <div class="dim cat-service" style="top:800px; left:5px;">
+                <div class="dim-header">
+                    <span class="dim-icon">🏢</span>
+                    <div class="dim-info">
+                        <div class="dim-name">Dim_Provider</div>
+                        <div class="dim-type">Service Delivery</div>
+                    </div>
+                </div>
+                <div class="dim-body">
+                    <div class="dim-row"><span class="col-name">provider_id<span class="pk-tag">PK</span></span><span class="col-type">int</span></div>
+                    <div class="dim-row"><span class="col-name">name</span><span class="col-type">string</span></div>
+                    <div class="dim-row"><span class="col-name">service_type</span><span class="col-type">string</span></div>
+                    <div class="dim-row"><span class="col-name">email</span><span class="col-type">string</span></div>
+                    <div class="dim-row"><span class="col-name">phone</span><span class="col-type">string</span></div>
+                    <div class="dim-row"><span class="col-name">city</span><span class="col-type">string</span></div>
+                    <div class="dim-row"><span class="col-name">created_at</span><span class="etl-tag">ETL</span></div>
+                    <div class="dim-row"><span class="col-name">updated_at</span><span class="etl-tag">ETL</span></div>
+                    <div class="dim-row"><span class="col-name">source_data</span><span class="etl-tag">ETL</span></div>
+                    <div class="dim-row"><span class="col-name">etl_batch</span><span class="etl-tag">ETL</span></div>
+                </div>
+                <div class="dim-footer">
+                    <span class="dim-rel"><strong>1:N</strong> → FACT</span>
+                    <span class="dim-fk">fk_provider</span>
+                </div>
+            </div>
+
+            <!-- RIGHT-MID-LOWER: DATE -->
+            <div class="dim cat-time" style="top:800px; left:1297px;">
+                <div class="dim-header">
+                    <span class="dim-icon">📆</span>
+                    <div class="dim-info">
+                        <div class="dim-name">Dim_Date</div>
+                        <div class="dim-type">Time — Conformed</div>
+                    </div>
+                </div>
+                <div class="dim-body">
+                    <div class="dim-row"><span class="col-name">date_id<span class="pk-tag">PK</span></span><span class="col-type">int</span></div>
+                    <div class="dim-row"><span class="col-name">date</span><span class="col-type">date</span></div>
+                    <div class="dim-row"><span class="col-name">year</span><span class="col-type">number</span></div>
+                    <div class="dim-row"><span class="col-name">month</span><span class="col-type">number</span></div>
+                    <div class="dim-row"><span class="col-name">day</span><span class="col-type">number</span></div>
+                    <div class="dim-row"><span class="col-name">quarter</span><span class="col-type">number</span></div>
+                    <div class="dim-row"><span class="col-name">semester</span><span class="col-type">number</span></div>
+                </div>
+                <div class="dim-footer">
+                    <span class="dim-rel"><strong>1:N</strong> × 4 FKs</span>
+                    <span class="dim-fk">role-playing</span>
+                </div>
+            </div>
+
+            <!-- LEFT-BOTTOM: LOCATION -->
+            <div class="dim cat-analytics" style="top:1020px; left:5px;">
+                <div class="dim-header">
+                    <span class="dim-icon">📍</span>
+                    <div class="dim-info">
+                        <div class="dim-name">Dim_Location</div>
+                        <div class="dim-type">Analytics</div>
+                    </div>
+                </div>
+                <div class="dim-body">
+                    <div class="dim-row"><span class="col-name">location_id<span class="pk-tag">PK</span></span><span class="col-type">int</span></div>
+                    <div class="dim-row"><span class="col-name">postal_code</span><span class="col-type">string</span></div>
+                    <div class="dim-row"><span class="col-name">city</span><span class="col-type">string</span></div>
+                    <div class="dim-row"><span class="col-name">address</span><span class="col-type">string</span></div>
+                    <div class="dim-row"><span class="col-name">local_code</span><span class="col-type">string</span></div>
+                    <div class="dim-row"><span class="col-name">created_at</span><span class="etl-tag">ETL</span></div>
+                    <div class="dim-row"><span class="col-name">updated_at</span><span class="etl-tag">ETL</span></div>
+                    <div class="dim-row"><span class="col-name">source_data</span><span class="etl-tag">ETL</span></div>
+                    <div class="dim-row"><span class="col-name">etl_batch</span><span class="etl-tag">ETL</span></div>
+                </div>
+                <div class="dim-footer">
+                    <span class="dim-rel"><strong>1:N</strong> → FACT</span>
+                    <span class="dim-fk">fk_location</span>
+                </div>
+            </div>
+
+            <!-- RIGHT-LOWER: SEASON -->
+            <div class="dim cat-time" style="top:1020px; left:1297px;">
+                <div class="dim-header">
+                    <span class="dim-icon">🌤️</span>
+                    <div class="dim-info">
+                        <div class="dim-name">Dim_Season</div>
+                        <div class="dim-type">Time</div>
+                    </div>
+                </div>
+                <div class="dim-body">
+                    <div class="dim-row"><span class="col-name">season_id<span class="pk-tag">PK</span></span><span class="col-type">int</span></div>
+                    <div class="dim-row"><span class="col-name">season_name</span><span class="col-type">string</span></div>
+                    <div class="dim-row"><span class="col-name">weather_description</span><span class="col-type">string</span></div>
+                    <div class="dim-row"><span class="col-name">created_at</span><span class="etl-tag">ETL</span></div>
+                    <div class="dim-row"><span class="col-name">updated_at</span><span class="etl-tag">ETL</span></div>
+                    <div class="dim-row"><span class="col-name">source_data</span><span class="etl-tag">ETL</span></div>
+                    <div class="dim-row"><span class="col-name">etl_batch</span><span class="etl-tag">ETL</span></div>
+                </div>
+                <div class="dim-footer">
+                    <span class="dim-rel"><strong>1:N</strong> → FACT</span>
+                    <span class="dim-fk">fk_season</span>
+                </div>
+            </div>
+
+            <!-- BOTTOM-LEFT: REVIEWS -->
+            <div class="dim cat-analytics" style="top:1170px; left:231px;">
+                <div class="dim-header">
+                    <span class="dim-icon">💬</span>
+                    <div class="dim-info">
+                        <div class="dim-name">Dim_Reviews</div>
+                        <div class="dim-type">Analytics</div>
+                    </div>
+                </div>
+                <div class="dim-body">
+                    <div class="dim-row"><span class="col-name">reviews_id<span class="pk-tag">PK</span></span><span class="col-type">int</span></div>
+                    <div class="dim-row"><span class="col-name">bk_comments</span><span class="col-type">string</span></div>
+                    <div class="dim-row"><span class="col-name">username</span><span class="col-type">string</span></div>
+                    <div class="dim-row"><span class="col-name">title</span><span class="col-type">string</span></div>
+                    <div class="dim-row"><span class="col-name">description</span><span class="col-type">string</span></div>
+                    <div class="dim-row"><span class="col-name">created_at</span><span class="etl-tag">ETL</span></div>
+                    <div class="dim-row"><span class="col-name">updated_at</span><span class="etl-tag">ETL</span></div>
+                    <div class="dim-row"><span class="col-name">source_data</span><span class="etl-tag">ETL</span></div>
+                    <div class="dim-row"><span class="col-name">etl_batch</span><span class="etl-tag">ETL</span></div>
+                </div>
+                <div class="dim-footer">
+                    <span class="dim-rel"><strong>1:N</strong> → FACT</span>
+                    <span class="dim-fk">fk_reviews</span>
+                </div>
+            </div>
+
+            <!-- BOTTOM-RIGHT: COMPETITOR -->
+            <div class="dim cat-analytics" style="top:1170px; left:1071px;">
+                <div class="dim-header">
+                    <span class="dim-icon">🎯</span>
+                    <div class="dim-info">
+                        <div class="dim-name">Dim_Competitor</div>
+                        <div class="dim-type">Analytics</div>
+                    </div>
+                </div>
+                <div class="dim-body">
+                    <div class="dim-row"><span class="col-name">competitor_id<span class="pk-tag">PK</span></span><span class="col-type">int</span></div>
+                    <div class="dim-row"><span class="col-name">bk_competitor</span><span class="col-type">string</span></div>
+                    <div class="dim-row"><span class="col-name">brand_name</span><span class="col-type">string</span></div>
+                    <div class="dim-row"><span class="col-name">brand_description</span><span class="col-type">string</span></div>
+                    <div class="dim-row"><span class="col-name">top_features</span><span class="col-type">string</span></div>
+                    <div class="dim-row"><span class="col-name">created_at</span><span class="etl-tag">ETL</span></div>
+                    <div class="dim-row"><span class="col-name">updated_at</span><span class="etl-tag">ETL</span></div>
+                    <div class="dim-row"><span class="col-name">source_data</span><span class="etl-tag">ETL</span></div>
+                    <div class="dim-row"><span class="col-name">etl_batch</span><span class="etl-tag">ETL</span></div>
+                </div>
+                <div class="dim-footer">
+                    <span class="dim-rel"><strong>1:N</strong> → FACT</span>
+                    <span class="dim-fk">fk_competitor</span>
+                </div>
+            </div>
+
+            <!-- BOTTOM-CENTER: MARKETING_SPEND -->
+            <div class="dim cat-analytics" style="top:1220px; left:651px;">
+                <div class="dim-header">
+                    <span class="dim-icon">📊</span>
+                    <div class="dim-info">
+                        <div class="dim-name">Dim_Marketing_Spend</div>
+                        <div class="dim-type">Analytics</div>
+                    </div>
+                </div>
+                <div class="dim-body">
+                    <div class="dim-row"><span class="col-name">marketing_id<span class="pk-tag">PK</span></span><span class="col-type">int</span></div>
+                    <div class="dim-row"><span class="col-name">date_visitor</span><span class="col-type">date</span></div>
+                    <div class="dim-row"><span class="col-name">season_spend</span><span class="col-type">string</span></div>
+                    <div class="dim-row"><span class="col-name">created_at</span><span class="etl-tag">ETL</span></div>
+                    <div class="dim-row"><span class="col-name">updated_at</span><span class="etl-tag">ETL</span></div>
+                    <div class="dim-row"><span class="col-name">source_data</span><span class="etl-tag">ETL</span></div>
+                    <div class="dim-row"><span class="col-name">etl_batch</span><span class="etl-tag">ETL</span></div>
+                </div>
+                <div class="dim-footer">
+                    <span class="dim-rel"><strong>1:N</strong> → FACT</span>
+                    <span class="dim-fk">fk_marketing_spend</span>
+                </div>
+            </div>
+
+            <!-- Legends -->
+            <div class="legend">
+                <div class="legend-title">Dimension Category</div>
+                <div class="legend-row"><div class="legend-dot" style="background:#4dabf7"></div><span class="legend-label">Business Context</span></div>
+                <div class="legend-row"><div class="legend-dot" style="background:#ffa94d"></div><span class="legend-label">Customer Journey</span></div>
+                <div class="legend-row"><div class="legend-dot" style="background:#38d9a9"></div><span class="legend-label">Service Delivery</span></div>
+                <div class="legend-row"><div class="legend-dot" style="background:#69db7c"></div><span class="legend-label">Time Dimension</span></div>
+                <div class="legend-row"><div class="legend-dot" style="background:#cc5de8"></div><span class="legend-label">Analytics</span></div>
+            </div>
+
+            <div class="rel-legend">
+                <div class="rel-legend-title">Relationship</div>
+                <div class="rel-row">
+                    <div class="rel-line" style="background: #4dabf7"></div>
+                    <span class="rel-label">Business 1:N</span>
+                </div>
+                <div class="rel-row">
+                    <div class="rel-line" style="background: #ffa94d"></div>
+                    <span class="rel-label">Customer 1:N</span>
+                </div>
+                <div class="rel-row">
+                    <div class="rel-line" style="background: #38d9a9"></div>
+                    <span class="rel-label">Service 1:N</span>
+                </div>
+                <div class="rel-row">
+                    <div class="rel-line" style="background: #69db7c"></div>
+                    <span class="rel-label">Time 1:N</span>
+                </div>
+                <div class="rel-row">
+                    <div class="rel-line" style="background: #cc5de8"></div>
+                    <span class="rel-label">Analytics 1:N</span>
+                </div>
+            </div>
+
+        </div>
+        </div>
+    </div>
+
+    <!-- ══════════ DOCUMENTATION ══════════ -->
+
+    <div class="docs-section" style="margin-bottom:24px;">
+
+        <!-- RELATIONSHIP MAP -->
+        <div class="doc-block">
+            <div class="doc-block-header">
+                <span class="doc-block-icon">🔗</span>
+                <span class="doc-block-title">Relationship Map — All Foreign Keys</span>
+            </div>
+            <div class="doc-block-body" style="padding:0;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Dimension</th>
+                            <th>PK</th>
+                            <th>Fact FK</th>
+                            <th>Type</th>
+                            <th>Category</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Dim_Event</td><td>event_id</td><td>fk_event</td><td><span class="t-badge t-dim">1:N</span></td><td><span class="t-badge t-blue">Business</span></td></tr>
+                        <tr><td>Dim_Reservation</td><td>reservation_id</td><td>fk_reservation</td><td><span class="t-badge t-dim">1:N</span></td><td><span class="t-badge t-blue">Business</span></td></tr>
+                        <tr><td>Dim_Service</td><td>service_id</td><td>fk_service</td><td><span class="t-badge t-dim">1:N</span></td><td><span class="t-badge t-blue">Business</span></td></tr>
+                        <tr><td>Dim_Beneficiary</td><td>beneficiary_id</td><td>fk_beneficiary</td><td><span class="t-badge t-dim">1:N</span></td><td><span class="t-badge t-amber">Customer</span></td></tr>
+                        <tr><td>Dim_Complaint</td><td>complaint_id</td><td>fk_complaint</td><td><span class="t-badge t-dim">1:N</span></td><td><span class="t-badge t-amber">Customer</span></td></tr>
+                        <tr><td>Dim_Evaluation</td><td>evaluation_id</td><td>fk_evaluation</td><td><span class="t-badge t-dim">1:N</span></td><td><span class="t-badge t-amber">Customer</span></td></tr>
+                        <tr><td>Dim_Provider</td><td>provider_id</td><td>fk_provider</td><td><span class="t-badge t-dim">1:N</span></td><td><span class="t-badge t-teal">Service</span></td></tr>
+                        <tr><td>Dim_Category</td><td>category_id</td><td>fk_category</td><td><span class="t-badge t-dim">1:N</span></td><td><span class="t-badge t-teal">Service</span></td></tr>
+                        <tr><td>Dim_Date</td><td>date_id</td><td>fk_event_date</td><td><span class="t-badge t-dim">1:N</span></td><td><span class="t-badge t-green">Time ×4</span></td></tr>
+                        <tr><td>Dim_Date</td><td>date_id</td><td>fk_reservation_date</td><td><span class="t-badge t-dim">1:N</span></td><td><span class="t-badge t-green">Time ×4</span></td></tr>
+                        <tr><td>Dim_Date</td><td>date_id</td><td>fk_date_visitor</td><td><span class="t-badge t-dim">1:N</span></td><td><span class="t-badge t-green">Time ×4</span></td></tr>
+                        <tr><td>Dim_Date</td><td>date_id</td><td>fk_marketing_spend_year_month</td><td><span class="t-badge t-dim">1:N</span></td><td><span class="t-badge t-green">Time ×4</span></td></tr>
+                        <tr><td>Dim_Season</td><td>season_id</td><td>fk_season</td><td><span class="t-badge t-dim">1:N</span></td><td><span class="t-badge t-green">Time</span></td></tr>
+                        <tr><td>Dim_Location</td><td>location_id</td><td>fk_location</td><td><span class="t-badge t-dim">1:N</span></td><td><span class="t-badge t-purple">Analytics</span></td></tr>
+                        <tr><td>Dim_Reviews</td><td>reviews_id</td><td>fk_reviews</td><td><span class="t-badge t-dim">1:N</span></td><td><span class="t-badge t-purple">Analytics</span></td></tr>
+                        <tr><td>Dim_Marketing_Spend</td><td>marketing_id</td><td>fk_marketing_spend</td><td><span class="t-badge t-dim">1:N</span></td><td><span class="t-badge t-purple">Analytics</span></td></tr>
+                        <tr><td>Dim_Competitor</td><td>competitor_id</td><td>fk_competitor</td><td><span class="t-badge t-dim">1:N</span></td><td><span class="t-badge t-purple">Analytics</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- MEASURES -->
+        <div class="doc-block">
+            <div class="doc-block-header">
+                <span class="doc-block-icon">📐</span>
+                <span class="doc-block-title">Measures & Additivity Classification</span>
+            </div>
+            <div class="doc-block-body" style="padding:0;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Measure</th>
+                            <th>Type</th>
+                            <th>Additivity</th>
+                            <th>Aggregation</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>price_services</td><td>float</td><td><span class="t-badge t-green">Fully</span></td><td>SUM</td></tr>
+                        <tr><td>budget_events</td><td>float</td><td><span class="t-badge t-green">Fully</span></td><td>SUM</td></tr>
+                        <tr><td>final_price_reservation</td><td>float</td><td><span class="t-badge t-green">Fully</span></td><td>SUM</td></tr>
+                        <tr><td>marketing_spend</td><td>float</td><td><span class="t-badge t-green">Fully</span></td><td>SUM</td></tr>
+                        <tr><td>new_beneficiaries</td><td>float</td><td><span class="t-badge t-green">Fully</span></td><td>SUM</td></tr>
+                        <tr><td>reservation_visits_count</td><td>float</td><td><span class="t-badge t-green">Fully</span></td><td>SUM</td></tr>
+                        <tr><td>visitor_count</td><td>int</td><td><span class="t-badge t-green">Fully</span></td><td>SUM</td></tr>
+                        <tr><td>rating_evaluation</td><td>float</td><td><span class="t-badge t-amber">Semi</span></td><td>AVG</td></tr>
+                        <tr><td>starting_price_competitor</td><td>float</td><td><span class="t-badge t-amber">Semi</span></td><td>AVG / MIN</td></tr>
+                        <tr><td>rating_stars_competitor</td><td>float</td><td><span class="t-badge t-amber">Semi</span></td><td>AVG</td></tr>
+                        <tr><td>rating_quality_price</td><td>float</td><td><span class="t-badge t-amber">Semi</span></td><td>AVG</td></tr>
+                        <tr><td>rating_features</td><td>float</td><td><span class="t-badge t-amber">Semi</span></td><td>AVG</td></tr>
+                        <tr><td>rating_reviews</td><td>float</td><td><span class="t-badge t-amber">Semi</span></td><td>AVG</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- DIMENSION SPECS + SAMPLE QUERY -->
+    <div class="docs-section">
+
+        <div class="doc-block">
+            <div class="doc-block-header">
+                <span class="doc-block-icon">🗃️</span>
+                <span class="doc-block-title">Dimension Specification</span>
+            </div>
+            <div class="doc-block-body" style="padding:0;">
+                <table class="data-table">
+                    <thead>
+                        <tr><th>Dimension</th><th>SCD Type</th><th>ETL Fields</th><th>Purpose</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Dim_Event</td><td><span class="t-badge scd2">SCD Type 2</span></td><td>created_at, updated_at, source_system</td><td>Core event catalog</td></tr>
+                        <tr><td>Dim_Reservation</td><td><span class="t-badge scd2">SCD Type 2</span></td><td>created_at, updated_at, source_data, etl_batch</td><td>Reservation lifecycle</td></tr>
+                        <tr><td>Dim_Service</td><td><span class="t-badge scd1">SCD Type 1</span></td><td>created_at, updated_at, source_data, etl_batch</td><td>Service catalog</td></tr>
+                        <tr><td>Dim_Beneficiary</td><td><span class="t-badge scd2">SCD Type 2</span></td><td>created_at, updated_at, source_data, etl_batch</td><td>Customer master</td></tr>
+                        <tr><td>Dim_Complaint</td><td><span class="t-badge scd2">SCD Type 2</span></td><td>created_at, updated_at, source_data, etl_batch</td><td>Feedback tracking</td></tr>
+                        <tr><td>Dim_Evaluation</td><td><span class="t-badge scd1">SCD Type 1</span></td><td>created_at, updated_at, source_data, etl_batch</td><td>Quality assessment</td></tr>
+                        <tr><td>Dim_Provider</td><td><span class="t-badge scd2">SCD Type 2</span></td><td>created_at, updated_at, source_data, etl_batch</td><td>Provider registry</td></tr>
+                        <tr><td>Dim_Category</td><td><span class="t-badge scd1">SCD Type 1</span></td><td>created_at, updated_at, source_data, etl_batch</td><td>Service taxonomy</td></tr>
+                        <tr><td>Dim_Date</td><td><span class="t-badge scd1">SCD Type 1</span></td><td>— (static)</td><td>Time intelligence ×4 roles</td></tr>
+                        <tr><td>Dim_Season</td><td><span class="t-badge scd1">SCD Type 1</span></td><td>created_at, updated_at, source_data, etl_batch</td><td>Seasonal analysis</td></tr>
+                        <tr><td>Dim_Location</td><td><span class="t-badge scd1">SCD Type 1</span></td><td>created_at, updated_at, source_data, etl_batch</td><td>Geographic analysis</td></tr>
+                        <tr><td>Dim_Reviews</td><td><span class="t-badge scd1">SCD Type 1</span></td><td>created_at, updated_at, source_data, etl_batch</td><td>Review aggregation</td></tr>
+                        <tr><td>Dim_Marketing_Spend</td><td><span class="t-badge scd1">SCD Type 1</span></td><td>created_at, updated_at, source_data, etl_batch</td><td>Campaign tracking</td></tr>
+                        <tr><td>Dim_Competitor</td><td><span class="t-badge scd2">SCD Type 2</span></td><td>created_at, updated_at, source_data, etl_batch</td><td>Competitive intel</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- SAMPLE QUERIES -->
+        <div class="doc-block">
+            <div class="doc-block-header">
+                <span class="doc-block-icon">⚡</span>
+                <span class="doc-block-title">Sample Analytical Queries</span>
+            </div>
+            <div class="doc-block-body">
+
+                <div style="margin-bottom:6px; font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-3); text-transform:uppercase; letter-spacing:.08em;">Revenue by Season</div>
+                <div class="code-block">
+<span class="kw">SELECT</span>
+  s.season_name,
+  <span class="fn">SUM</span>(f.final_price_reservation) <span class="kw">AS</span> revenue,
+  <span class="fn">AVG</span>(f.rating_evaluation)       <span class="kw">AS</span> avg_rating,
+  <span class="fn">COUNT</span>(*)                       <span class="kw">AS</span> reservations
+<span class="kw">FROM</span>   Fact_Event_Management f
+<span class="kw">JOIN</span>   Dim_Season  s <span class="kw">ON</span> f.fk_season        = s.season_id
+<span class="kw">JOIN</span>   Dim_Date    d <span class="kw">ON</span> f.fk_event_date    = d.date_id
+<span class="kw">WHERE</span>  d.year = <span class="num">2024</span>
+<span class="kw">GROUP BY</span> s.season_name
+<span class="kw">ORDER BY</span> revenue <span class="kw">DESC</span>;</div>
+
+                <div style="margin:16px 0 6px; font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-3); text-transform:uppercase; letter-spacing:.08em;">Marketing ROI</div>
+                <div class="code-block">
+<span class="kw">SELECT</span>
+  s.season_name,
+  <span class="fn">SUM</span>(f.marketing_spend)              <span class="kw">AS</span> spend,
+  <span class="fn">SUM</span>(f.final_price_reservation)      <span class="kw">AS</span> revenue,
+  <span class="fn">ROUND</span>(
+    <span class="fn">SUM</span>(f.final_price_reservation)
+    / <span class="fn">NULLIF</span>(<span class="fn">SUM</span>(f.marketing_spend), <span class="num">0</span>),
+  <span class="num">2</span>)                                  <span class="kw">AS</span> roi
+<span class="kw">FROM</span>   Fact_Event_Management f
+<span class="kw">JOIN</span>   Dim_Season s <span class="kw">ON</span> f.fk_season = s.season_id
+<span class="kw">GROUP BY</span> s.season_name
+<span class="kw">ORDER BY</span> roi <span class="kw">DESC</span>;</div>
+
+                <div style="margin:16px 0 6px; font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-3); text-transform:uppercase; letter-spacing:.08em;">Competitor Benchmark</div>
+                <div class="code-block">
+<span class="kw">SELECT</span>
+  c.brand_name,
+  <span class="fn">AVG</span>(f.starting_price_competitor) <span class="kw">AS</span> avg_price,
+  <span class="fn">AVG</span>(f.rating_stars_competitor)   <span class="kw">AS</span> avg_stars,
+  <span class="fn">AVG</span>(f.rating_quality_price)      <span class="kw">AS</span> our_qp_rating
+<span class="kw">FROM</span>   Fact_Event_Management f
+<span class="kw">JOIN</span>   Dim_Competitor c <span class="kw">ON</span> f.fk_competitor = c.competitor_id
+<span class="kw">GROUP BY</span> c.brand_name
+<span class="kw">ORDER BY</span> avg_price;</div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<footer class="footer">
+    <span>FACT_EVENT_MANAGEMENT</span> · 1 Fact · 14 Dimensions · 17 FK Relations · 13 Measures · Kimball Dimensional Model · v1.0
+</footer>
+
+</body>
+</html>

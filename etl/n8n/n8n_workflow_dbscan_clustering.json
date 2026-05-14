@@ -1,0 +1,418 @@
+{
+  "name": "EventZella DBSCAN Clustering Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 2
+            }
+          ]
+        }
+      },
+      "name": "DBSCAN Schedule",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        250,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://flask:5000/train-models",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"action\": \"start_training\",\n  \"reason\": \"Scheduled update from n8n\"\n}",
+        "options": {}
+      },
+      "name": "Train DBSCAN Model",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM view_event_analysis ;",
+        "options": {}
+      },
+      "name": "Load View for DBSCAN",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        250,
+        500
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "GuXQ4ZWVBc0pJBzP",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = [];\nconst allItems = $input.all();\n\nconst subjectCounts = {};\nlet totalSubjects = 0;\nfor (const item of allItems) {\n  const s = item.json.complaint_subject;\n  if (s) { subjectCounts[s] = (subjectCounts[s] || 0) + 1; totalSubjects++; }\n}\n\nfor (const item of allItems) {\n  const d = item.json;\n  const eventType = d.event_type || '';\n  const resStatus = (d.reservation_status || '').toLowerCase().trim();\n  const subject = d.complaint_subject;\n  const subjectFreq = subject ? (subjectCounts[subject] || 0) / Math.max(totalSubjects, 1) : 0;\n\n  items.push({\n    json: {\n      budget: Number(d.budget) || 0,\n      price: Number(d.price) || 0,\n      final_price: Number(d.final_price) || 0,\n      rating: Number(d.rating) || 0,\n      visitors: Number(d.visitors) || 0,\n      complaint_status_bin: d.complaint_status ? 1 : 0,\n      complaint_subject_freq: subjectFreq,\n      ['event_type_Corporate Event']: eventType === 'Corporate Event' ? 1 : 0,\n      ['event_type_Private Party']: eventType === 'Private Party' ? 1 : 0,\n      ['event_type_Wedding']: eventType === 'Wedding' ? 1 : 0,\n      reservation_status_cancelled: resStatus === 'cancelled' ? 1 : 0,\n      reservation_status_confirmed: resStatus === 'confirmed' ? 1 : 0,\n      reservation_status_pending: resStatus === 'pending' ? 1 : 0\n    }\n  });\n}\nreturn items;"
+      },
+      "name": "Transform View Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        250,
+        650
+      ]
+    },
+    {
+      "parameters": {
+        "batchSize": 500,
+        "options": {}
+      },
+      "name": "Batch DBSCAN Rows",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        250,
+        800
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://flask:5000/predict-cluster",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "final_price",
+              "value": "={{ $json.final_price }}"
+            },
+            {
+              "name": "price",
+              "value": "={{ $json.price }}"
+            },
+            {
+              "name": "budget",
+              "value": "={{ $json.budget }}"
+            },
+            {
+              "name": "rating",
+              "value": "={{ $json.rating }}"
+            },
+            {
+              "name": "visitors",
+              "value": "={{ $json.visitors }}"
+            },
+            {
+              "name": "complaint_status_bin",
+              "value": "={{ $json.complaint_status_bin }}"
+            },
+            {
+              "name": "complaint_subject_freq",
+              "value": "={{ $json.complaint_subject_freq }}"
+            },
+            {
+              "name": "event_type_Corporate Event",
+              "value": "={{ $json[\"event_type_Corporate Event\"] }}"
+            },
+            {
+              "name": "event_type_Private Party",
+              "value": "={{ $json[\"event_type_Private Party\"] }}"
+            },
+            {
+              "name": "event_type_Wedding",
+              "value": "={{ $json.event_type_Wedding }}"
+            },
+            {
+              "name": "reservation_status_cancelled",
+              "value": "={{ $json.reservation_status_cancelled }}"
+            },
+            {
+              "name": "reservation_status_confirmed",
+              "value": "={{ $json.reservation_status_confirmed }}"
+            },
+            {
+              "name": "reservation_status_pending",
+              "value": "={{ $json.reservation_status_pending }}"
+            },
+            {
+              "name": "algo",
+              "value": "dbscan"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Predict DBSCAN Cluster",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        250,
+        1000
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "01dce786-d89e-4001-807c-4d30b048f2a4",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "error",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "Check DBSCAN Error",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        250,
+        1200
+      ]
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "name": "Aggregate DBSCAN Errors",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        600,
+        1300
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "larrymclarens@gmail.com",
+        "subject": "Error dbscan",
+        "message": "=<h3>Une erreur est survenue dans le modele ML</h3> <p><strong>Details :</strong> </p> <p><strong>Heure de l'incident :</strong> {{ $now }}</p> <p><strong>Statut renvoye :</strong> {{ $json.status }}</p> <br> <p><i>Ceci est une alerte automatique envoyee par n8n.</i></p>",
+        "options": {}
+      },
+      "name": "Send DBSCAN Error Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [
+        850,
+        1300
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "omzzrA8o3PmkMEfD",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1Z3fzBE0LdsjUzOVOpZer0R6xpiSaslvybFf_WgdZ9ro",
+          "mode": "list",
+          "cachedResultName": "Feuille de calcul sans titre",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1zmSg-I4tOHw_1n7uE3aKy6MZwysw-1RMOoFHsXNmJ3U/edit?gid=0#gid=0"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "dbscan",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1zmSg-I4tOHw_1n7uE3aKy6MZwysw-1RMOoFHsXNmJ3U/edit?gid=0#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "algorithm\n": "={{$json.algorithm}}",
+            "cluster_id": "={{$json.cluster_id}}",
+            "status": "={{$json.status}}",
+            "cluster_name": "={{$json.cluster_name}}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "algorithm\n",
+              "displayName": "algorithm\n",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "cluster_id",
+              "displayName": "cluster_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "cluster_name",
+              "displayName": "cluster_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "name": "Append DBSCAN to Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        600,
+        1500
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "U1gl8LSbJYVp7mdk",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "DBSCAN Schedule": {
+      "main": [
+        [
+          {
+            "node": "Train DBSCAN Model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Train DBSCAN Model": {
+      "main": [
+        [
+          {
+            "node": "Load View for DBSCAN",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load View for DBSCAN": {
+      "main": [
+        [
+          {
+            "node": "Transform View Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform View Data": {
+      "main": [
+        [
+          {
+            "node": "Batch DBSCAN Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Batch DBSCAN Rows": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Predict DBSCAN Cluster",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Predict DBSCAN Cluster": {
+      "main": [
+        [
+          {
+            "node": "Batch DBSCAN Rows",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check DBSCAN Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check DBSCAN Error": {
+      "main": [
+        [
+          {
+            "node": "Aggregate DBSCAN Errors",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Append DBSCAN to Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate DBSCAN Errors": {
+      "main": [
+        [
+          {
+            "node": "Send DBSCAN Error Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "id": "2"
+}
