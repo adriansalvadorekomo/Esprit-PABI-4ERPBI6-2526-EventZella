@@ -1,11 +1,14 @@
 """Single source of truth for all backend configuration."""
 import os
 from pathlib import Path
-from dotenv import load_dotenv
 
 # Only load .env if not already set by docker-compose (or other env injection)
 if not os.getenv("EVENTZILLA_DB_HOST"):
-    load_dotenv(Path(__file__).parent / ".env")
+    try:
+        from dotenv import load_dotenv
+        load_dotenv(Path(__file__).parent / ".env")
+    except ImportError:
+        print("Warning: python-dotenv not installed. Using existing environment variables.")
 
 DB_USER     = os.getenv("EVENTZILLA_DB_USER",     "postgres")
 DB_PASSWORD = os.getenv("EVENTZILLA_DB_PASSWORD", "1400")

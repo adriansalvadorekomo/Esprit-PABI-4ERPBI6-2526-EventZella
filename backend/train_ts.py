@@ -164,7 +164,7 @@ future_index = pd.date_range(ts.index[-1] + pd.DateOffset(months=1),
                               periods=horizon, freq="MS")
 forecast_df = pd.DataFrame({"ds": future_index, "yhat": future_orig})
 
-forecast_path = "models/ts_forecast.csv"
+forecast_path = "models/sarima_forecast.csv"
 forecast_df.to_csv(forecast_path, index=False)
 print("\nForecast next 6 months:")
 print(forecast_df.to_string(index=False))

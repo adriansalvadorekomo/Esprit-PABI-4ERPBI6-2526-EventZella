@@ -1,0 +1,51 @@
+{
+  "title": "System Health",
+  "uid": "system-health",
+  "tags": ["eventzilla", "infrastructure", "monitoring"],
+  "timezone": "browser",
+  "editable": true,
+  "panels": [
+    {
+      "title": "FastAPI Uptime",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [ { "color": "green", "value": null } ] } } },
+      "targets": [{ "expr": "time() - process_start_time_seconds{job='fastapi'}", "legendFormat": "Uptime" }]
+    },
+    {
+      "title": "Memory Usage",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [ { "color": "green", "value": null }, { "color": "orange", "value": 524288000 }, { "color": "red", "value": 1073741824 } ] }, "unit": "bytes" } },
+      "targets": [{ "expr": "process_resident_memory_bytes{job='fastapi'}", "legendFormat": "Memory" }]
+    },
+    {
+      "title": "Active Threads",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [ { "color": "green", "value": null }, { "color": "orange", "value": 50 }, { "color": "red", "value": 100 } ] } } },
+      "targets": [{ "expr": "python_gc_objects_collected_total{job='fastapi'}", "legendFormat": "Threads" }]
+    },
+    {
+      "title": "CPU Usage",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "fieldConfig": { "defaults": { "unit": "percent" } },
+      "targets": [{ "expr": "rate(process_cpu_seconds_total{job='fastapi'}[1m])", "legendFormat": "FastAPI" }]
+    },
+    {
+      "title": "Memory Over Time",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 12 },
+      "fieldConfig": { "defaults": { "unit": "bytes" } },
+      "targets": [{ "expr": "process_resident_memory_bytes{job='fastapi'}", "legendFormat": "FastAPI" }]
+    },
+    {
+      "title": "GC Collections",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 12 },
+      "targets": [{ "expr": "rate(python_gc_collections_total{job='fastapi'}[1m])", "legendFormat": "{{generation}}" }]
+    }
+  ],
+  "schemaVersion": 39
+}

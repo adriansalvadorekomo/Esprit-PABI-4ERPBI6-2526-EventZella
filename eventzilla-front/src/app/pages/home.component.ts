@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, signal, AfterViewInit, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, computed, AfterViewInit, ElementRef } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ApiService } from '../services/api.service';
 import { AuthService } from '../services/auth.service';
@@ -16,6 +16,24 @@ import {
 type Section = 'overview' | 'dashboards' | 'lab' | 'about';
 const PROTECTED: Section[] = ['dashboards', 'lab'];
 
+const ALL_MODELS = ['price', 'fidel', 'loyalty', 'cluster', 'forecast', 'revenue', 'sentiment', 'reco', 'anomaly', 'dl'];
+
+const MODELS_BY_ROLE: Record<string, string[]> = {
+  marketing:   ['loyalty', 'sentiment', 'reco', 'dl'],
+  quality:     ['fidel', 'sentiment', 'anomaly'],
+  operational: ['forecast', 'cluster', 'anomaly'],
+  business:    ['price', 'revenue', 'dl'],
+  admin:       ALL_MODELS,
+};
+
+const ROLE_LABELS: Record<string, string> = {
+  marketing:   'Marketing Team',
+  quality:     'Quality Team',
+  operational: 'Operations Team',
+  business:    'Business Team',
+  admin:       'Administrator',
+};
+
 @Component({
   selector: 'app-home',
   templateUrl: './home.component.html',
@@ -28,7 +46,7 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
   private readonly el        = inject(ElementRef);
   protected readonly auth    = inject(AuthService);
 
-  readonly pbiUrl     = 'https://app.powerbi.com/reportEmbed?reportId=de8ac328-20ee-4ad9-8c5a-6cd4d7708ab6&autoAuth=true&embeddedDemo=true';
+  readonly pbiUrl     = 'https://app.powerbi.com/reportEmbed?reportId=dc9db629-33f9-4787-871d-12a3eca47048&autoAuth=true&ctid=604f1a96-cbe8-43f8-abbf-f8eaf5d85730';
   readonly pbiUrlSafe: SafeResourceUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.pbiUrl);
 
   activeSection = signal<Section>('overview');
@@ -36,47 +54,61 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
   modelInfoVisible = signal(false);
   modelInfoKey = signal<string | null>(null);
 
+  readonly filteredModels = computed<string[]>(() => {
+    const role = this.auth.role();
+    return MODELS_BY_ROLE[role] ?? [];
+  });
+
+  readonly roleSubtitle = computed<string>(() => {
+    const role = this.auth.role();
+    if (!role) return '';
+    const label = ROLE_LABELS[role] ?? role;
+    return role === 'admin'
+      ? 'Full access — all decision tools available'
+      : `Tools available for ${label}`;
+  });
+
   readonly modelInfo: Record<string, { title: string; goal: string; fields: { name: string; desc: string }[]; benchmarks?: { name: string; desc: string; example: string }[] }> = {
     price: {
-      title: 'Price Prediction',
-      goal: 'This tool estimates the best final price for an event based on its characteristics. Think of it as a smart pricing advisor — you give it the event details and it tells you what price to expect.',
+      title: 'Smart Event Pricing',
+      goal: 'This tool estimates the best price for your event. Think of it as a smart pricing advisor — you enter the event details and it tells you what price to expect.',
       fields: [
         { name: 'Price', desc: 'The base price you plan to charge.' },
-        { name: 'Budget', desc: 'Total budget allocated for the event.' },
-        { name: 'Marketing Spend', desc: 'How much you spent promoting the event.' },
+        { name: 'Budget', desc: 'Total budget for the event.' },
+        { name: 'Marketing Spend', desc: 'How much you spent on promotion.' },
         { name: 'New Beneficiaries', desc: 'Number of new attendees expected.' },
-        { name: 'Reservations', desc: 'Number of bookings already made.' },
-        { name: 'Nb Events', desc: 'How many events the organizer has run before.' },
-        { name: 'Avg Spent / User', desc: 'On average, how much each attendee spends.' },
+        { name: 'Reservations', desc: 'How many bookings already made.' },
+        { name: 'Nb Events', desc: 'How many events you have run before.' },
+        { name: 'Avg Spent / User', desc: 'Average amount each attendee spends.' },
         { name: 'Type', desc: 'The kind of event (Corporate, Wedding, Party…).' },
         { name: 'Status', desc: 'Whether the event is confirmed, pending, or cancelled.' },
       ]
     },
     fidel: {
-      title: 'Fidelisation',
-      goal: 'This tool predicts whether a client will come back and book again. It gives you a loyalty score and tells you what action to take — like sending a personalized offer or just a newsletter.',
+      title: 'Client Return Likelihood',
+      goal: 'This tool predicts whether a client will come back and book again. It gives you a loyalty score and tells you what action to take — like sending a personalised offer or a newsletter.',
       fields: [
-        { name: 'Price / Budget / Final Price', desc: 'The financial profile of the event.' },
+        { name: 'Price / Budget / Final Price', desc: 'The financial details of the event.' },
         { name: 'Rating', desc: 'How the client rated the event (0 to 5).' },
         { name: 'Visitors', desc: 'How many people attended.' },
         { name: 'Marketing Spend', desc: 'Budget spent on promotion.' },
         { name: 'Has Complaint', desc: 'Did the client file a complaint? Yes or No.' },
-        { name: 'Event Type', desc: 'Corporate, Wedding, Private Party, or Unknown.' },
+        { name: 'Event Type', desc: 'Type of event (Corporate, Wedding, Party…).' },
         { name: 'Season', desc: 'Which season the event took place in.' },
         { name: 'Is Weekend', desc: 'Was the event on a weekend?' },
         { name: 'Month', desc: 'Which month the event happened.' },
       ],
       benchmarks: [
-        { name: 'Accuracy', desc: 'Out of all clients, how many did the model correctly classify as loyal or not loyal.', example: '85% accuracy means 85 out of 100 predictions were correct.' },
-        { name: 'Recall', desc: 'Out of all truly loyal clients, how many did the model successfully identify. High recall means fewer loyal clients are missed.', example: '78% recall means the model caught 78 out of every 100 genuinely loyal clients.' },
-        { name: 'ROC-AUC', desc: 'A score from 0 to 1 measuring how well the model separates loyal from non-loyal clients. 0.5 is random guessing; 1.0 is perfect.', example: '0.91 AUC means the model is excellent at ranking loyal clients above non-loyal ones.' },
+        { name: 'Correct Predictions', desc: 'Out of every 100 clients assessed, how many the tool correctly identified as loyal or not loyal.', example: '85% means 85 out of 100 predictions were correct.' },
+        { name: 'Loyal Clients Found', desc: 'Out of all truly loyal clients, how many the tool successfully spotted. A high score means fewer loyal clients are missed.', example: '78% means the tool caught 78 out of every 100 genuinely loyal clients.' },
+        { name: 'Prediction Confidence', desc: 'How reliable the assessment is. Ranges from 50% (random) to 100% (perfect). Higher means you can trust the result more.', example: '91% means the tool almost always correctly ranks a loyal client above a non-loyal one.' },
       ]
     },
     loyalty: {
-      title: 'Loyalty Score',
-      goal: 'Similar to Fidelisation but uses a different calculation method. It gives a simple Yes/No answer: will this client be loyal? Plus a confidence percentage.',
+      title: 'Client Loyalty Check',
+      goal: 'A quick answer: will this client be loyal? It gives a simple Yes/No result with a confidence percentage.',
       fields: [
-        { name: 'Price / Budget / Final Price', desc: 'The financial profile of the event.' },
+        { name: 'Price / Budget / Final Price', desc: 'The financial details of the event.' },
         { name: 'Rating', desc: 'Client satisfaction score (0 to 5).' },
         { name: 'Visitors', desc: 'Number of attendees.' },
         { name: 'Event Date', desc: 'When the event took place.' },
@@ -84,68 +116,78 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
       ]
     },
     cluster: {
-      title: 'Clustering',
-      goal: 'This tool groups events into categories based on their profile. It helps you understand what "type" of event you are dealing with — Premium, Potential, or At-Risk — so you can treat each group differently.',
+      title: 'Event Profile Grouping',
+      goal: 'This tool groups your events into categories based on their profile. It helps you understand what kind of event you are dealing with — Premium, Potential, or At-Risk — so you can manage each type differently.',
       fields: [
         { name: 'Budget / Price / Final Price', desc: 'The financial profile of the event.' },
         { name: 'Rating', desc: 'Client satisfaction score.' },
         { name: 'Visitors', desc: 'Number of attendees.' },
-        { name: 'Algorithm', desc: 'KMeans groups into fixed clusters; DBSCAN finds natural groups automatically.' },
+        { name: 'Algorithm', desc: 'Method used to group events. Standard groups into fixed categories; Flexible finds natural groupings automatically.' },
         { name: 'Event Type', desc: 'The category of the event.' },
         { name: 'Reservation Status', desc: 'Whether the booking is confirmed, pending, or cancelled.' },
       ],
       benchmarks: [
-        { name: 'Silhouette Score', desc: 'Measures how well each event fits its assigned group vs. other groups. Ranges from -1 to 1. Higher is better.', example: '0.62 means events in the same cluster are clearly more similar to each other than to events in other clusters.' },
-        { name: 'Davies-Bouldin Score', desc: 'Measures how spread out and separated the clusters are. Lower is better — it means clusters are compact and far apart.', example: '0.85 is a good score; 2.5 would mean the clusters overlap too much.' },
-        { name: 'Clusters Detected', desc: 'The number of distinct groups the algorithm found in your data.', example: '3 clusters might represent Premium, Standard, and At-Risk event profiles.' },
+        { name: 'Group Clarity', desc: 'How well-defined each group is. Closer to 1 means the groups are clean and meaningful.', example: '0.62 means events in the same group are clearly similar to each other.' },
+        { name: 'Group Separation', desc: 'How distinct the groups are. Lower is better — it means groups are well separated.', example: '0.85 is a good score; 2.5 would mean groups overlap too much.' },
+        { name: 'Groups Found', desc: 'The number of distinct event profiles discovered in your data.', example: '3 groups might represent Premium, Standard, and At-Risk events.' },
+        { name: 'Unclassified', desc: 'Events that did not fit clearly into any group — unusual cases worth reviewing.', example: '5 unclassified events means 5 events were too unusual to place in any group.' },
       ]
     },
     forecast: {
-      title: 'Demand Forecasting',
+      title: 'Booking Demand Forecast',
       goal: 'This tool looks at past booking history and predicts how many reservations to expect in the coming months. Like a weather forecast, but for your event demand.',
       fields: [
         { name: 'Category', desc: 'The type of events to forecast (e.g. Concerts, Weddings…).' },
-        { name: 'Horizon', desc: 'How many months ahead you want to predict.' },
+        { name: 'Horizon', desc: 'How many months ahead you want to look.' },
       ],
       benchmarks: [
-        { name: 'MAPE', desc: 'Mean Absolute Percentage Error — the average % gap between predicted and actual reservations. Lower is better.', example: '12% MAPE means the forecast is off by about 12 reservations for every 100 expected.' },
-        { name: 'MAE', desc: 'Mean Absolute Error — the average number of reservations the forecast misses per month, regardless of direction.', example: 'MAE of 8 means the model is typically off by 8 reservations per month.' },
-        { name: 'RMSE', desc: 'Root Mean Square Error — similar to MAE but penalizes large errors more heavily. Useful for spotting months with big misses.', example: 'RMSE of 15 with MAE of 8 means there are occasional months with much larger errors.' },
+        { name: 'Avg. Error Rate', desc: 'On average, how far off the forecast is. Lower is better — 0% would be perfect.', example: '12% means the forecast is typically off by about 12 bookings for every 100 expected.' },
+        { name: 'Typical Miss', desc: 'The usual difference between forecast and actual bookings each month.', example: 'A Typical Miss of 8 means the forecast is usually off by about 8 bookings per month.' },
+        { name: 'Worst-Case Miss', desc: 'Gives more weight to months with the biggest forecast errors. Useful for spotting occasional surprises.', example: 'If Typical Miss is 8 but Worst-Case Miss is 20, a few months had much larger errors worth investigating.' },
       ]
     },
     sentiment: {
-      title: 'Sentiment Analysis',
-      goal: 'Paste any client review or feedback text and this tool instantly tells you if it is Positive, Negative, or Neutral. No reading required — it reads it for you.',
+      title: 'Client Feedback Tone',
+      goal: 'Paste any client review or comment and this tool instantly tells you if it is Positive, Negative, or Neutral. No reading required — it reads it for you.',
       fields: [
         { name: 'Review Text', desc: 'Any written feedback from a client, in any language.' },
       ]
     },
     reco: {
-      title: 'Event Recommendations',
+      title: 'Personalised Event Suggestions',
       goal: 'Given a client ID, this tool suggests events they are most likely to enjoy based on what similar clients have attended. Like a "You might also like…" feature.',
       fields: [
         { name: 'Beneficiary ID', desc: 'The unique ID of the client in your system.' },
-        { name: 'Count', desc: 'How many event suggestions you want (1 to 10).' },
+        { name: 'Count', desc: 'How many suggestions you want (1 to 10).' },
       ]
     },
     anomaly: {
-      title: 'Anomaly Detection',
-      goal: 'This tool scans all your event financial data and flags anything that looks unusual — events with abnormal prices, budgets, or visitor numbers. Think of it as a fraud or error detector.',
+      title: 'Unusual Activity Alert',
+      goal: 'This tool scans all your event financial data and flags anything unusual — events with abnormal prices, budgets, or visitor numbers. Think of it as a fraud or error detector.',
       fields: [
-        { name: '(No inputs needed)', desc: 'The tool automatically analyzes all events in the database.' },
+        { name: '(No inputs needed)', desc: 'The tool automatically analyses all events in the database.' },
+      ]
+    },
+    revenue: {
+      title: 'Revenue Outlook',
+      goal: 'Think of this as a financial weather forecast for your business. By studying how your revenue has behaved over recent months, the system projects what your income is likely to look like over the coming months. No input needed — it runs automatically.',
+      fields: [
+        { name: 'No input required', desc: 'The forecast is computed automatically from your revenue history. Just open the panel and the chart loads instantly.' },
+        { name: 'Projected Revenue', desc: 'The estimated income for each upcoming month, shown as a bar chart so you can spot growth or slowdowns at a glance.' },
+        { name: 'Monthly Trend', desc: 'The shape of the bars tells the story — rising bars mean growth, flat or falling bars signal a slower period ahead.' },
       ]
     },
     dl: {
-      title: 'Deep Learning (MLP)',
-      goal: 'A more powerful version of the Fidelisation model. It uses a neural network — a system inspired by the human brain — to predict loyalty. It takes the same inputs as Fidelisation but can detect more complex patterns.',
+      title: 'Advanced Loyalty Predictor',
+      goal: 'A more powerful version of the Client Return Likelihood tool. It uses advanced analysis to detect more complex patterns. Enter the same details and get a second opinion.',
       fields: [
-        { name: '(Same inputs as Fidelisation)', desc: 'Fill the Fidelisation form first, then run this model for a second opinion.' },
+        { name: '(Same inputs as Client Return Likelihood)', desc: 'Fill the Client Return Likelihood form first, then use this tool for a second opinion.' },
       ],
       benchmarks: [
-        { name: 'Accuracy', desc: 'The percentage of clients correctly classified as loyal or not loyal during testing.', example: '88% accuracy means 88 out of 100 test predictions were correct.' },
-        { name: 'F1 Score', desc: 'A balance between catching loyal clients (recall) and not falsely labeling non-loyal ones (precision). Useful when the data is imbalanced.', example: '0.84 F1 means the model is both precise and thorough in identifying loyal clients.' },
-        { name: 'AUC', desc: 'Area Under the Curve — how well the model ranks loyal clients above non-loyal ones. 1.0 is perfect; 0.5 is random.', example: '0.93 AUC means the model almost always ranks a truly loyal client higher than a non-loyal one.' },
-        { name: 'Iterations', desc: 'How many training rounds the neural network completed before converging. More is not always better — early stopping prevents overfitting.', example: '47 iterations means the network found its optimal weights after 47 passes through the training data.' },
+        { name: 'Correct Predictions', desc: 'Out of every 100 clients assessed, how many the tool correctly identified as loyal or not loyal.', example: '88% means 88 out of 100 predictions were correct.' },
+        { name: 'Balanced Score', desc: 'A combined measure of precision and thoroughness. Closer to 100% is better.', example: '84% means the tool is both precise and thorough in identifying loyal clients.' },
+        { name: 'Prediction Confidence', desc: 'How reliable the assessment is. 50% is random; 100% is perfect.', example: '93% means the tool almost always correctly identifies a truly loyal client.' },
+        { name: 'Training Rounds', desc: 'How many improvement cycles the tool completed before reaching its best performance.', example: '47 rounds means the tool optimised itself 47 times before finishing.' },
       ]
     },
   };
@@ -202,6 +244,12 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
   forecastResult = signal<ForecastResponse | null>(null);
   forecastLoading = signal(false);
   forecastError = signal<string | null>(null);
+  revenueForecast = signal<{date: string; value: number}[] | null>(null);
+  revenueHistory  = signal<{date: string; value: number}[] | null>(null);
+  revenueModel    = signal<string | null>(null);
+  revenueLoading = signal(false);
+  revenueError = signal<string | null>(null);
+  revenueHorizon = signal<4 | 6 | 12>(6);
   categories = signal<string[]>([]);
 
   // ── NEW: Sentiment ────────────────────────────────────────────────────────
@@ -253,7 +301,7 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private readHash(): void {
     const hash = (window.location.hash.replace('#', '') || 'overview') as Section;
-    if (PROTECTED.includes(hash) && !this.auth.isAdmin) {
+    if (PROTECTED.includes(hash) && !this.auth.isLoggedIn()) {
       this.activeSection.set('overview');
       window.location.hash = 'overview';
     } else {
@@ -292,6 +340,9 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
     if (typeof window === 'undefined') return;
     const gsap = (window as any).gsap;
     this.selectedModel.set(id);
+    if (id === 'revenue') {
+      this.runRevenueForecast();
+    }
     if (id && gsap) {
       setTimeout(() => {
         gsap.from('.catalog-panel', {
@@ -307,7 +358,7 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   isProtectedAndLocked(section: Section): boolean {
-    return PROTECTED.includes(section) && !this.auth.isAdmin;
+    return PROTECTED.includes(section) && !this.auth.isLoggedIn();
   }
 
   get forecastTotalReservations(): number {
@@ -352,6 +403,43 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
     const total = this.forecastSeries.length;
     if (!historyLength || historyLength >= total) return null;
     return ((historyLength - 1) / (total - 1)) * 100;
+  }
+
+  get revenueForecastData(): ForecastResponse | null {
+    const forecast = this.revenueForecast();
+    if (!forecast) return null;
+    return {
+      status: 'success',
+      model: this.revenueModel() ?? undefined,
+      forecast,
+      history: this.revenueHistory() ?? []
+    };
+  }
+
+  shortNumber(v: number): string {
+    if (v >= 1_000_000) return (v / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+    if (v >= 1_000) return (v / 1_000).toFixed(1).replace(/\.0$/, '') + 'K';
+    return v.toFixed(0);
+  }
+
+  get revenueNextMonth(): number {
+    return this.revenueForecast()?.[0]?.value ?? 0;
+  }
+  get revenueMonthlyAvg(): number {
+    const f = this.revenueForecast();
+    if (!f?.length) return 0;
+    return f.reduce((s, p) => s + p.value, 0) / f.length;
+  }
+  get revenueTotal(): number {
+    return this.revenueForecast()?.reduce((s, p) => s + p.value, 0) ?? 0;
+  }
+  get revenueMax(): number {
+    const f = this.revenueForecast();
+    if (!f?.length) return 1;
+    return Math.max(...f.map(p => p.value), 1);
+  }
+  revenueBarHeight(value: number): number {
+    return (value / this.revenueMax) * 100;
   }
 
   get anomalyRatePercent(): number | null {
@@ -412,6 +500,7 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
     });
   }
 
+
   runLoyaltyPredict(): void {
     this.loyaltyLoading.set(true);
     this.loyaltyResult.set(null);
@@ -429,6 +518,23 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
     this.api.predictCluster(this.clusterForm).subscribe({
       next: (res) => { this.clusterResult.set(res); this.clusterLoading.set(false); this.animateResult('.cluster-result'); },
       error: (e)  => { this.clusterError.set(e?.error?.detail ?? e?.error?.error ?? 'API unreachable.'); this.clusterLoading.set(false); }
+    });
+  }
+
+  runRevenueForecast(): void {
+    this.revenueLoading.set(true);
+    this.revenueForecast.set(null);
+    this.revenueHistory.set(null);
+    this.revenueModel.set(null);
+    this.revenueError.set(null);
+    this.api.getRevenueForecast(this.revenueHorizon()).subscribe({
+      next: (res) => {
+        this.revenueForecast.set(res.forecast);
+        this.revenueHistory.set(res.history ?? []);
+        this.revenueModel.set(res.model ?? null);
+        this.revenueLoading.set(false);
+      },
+      error: (e) => { this.revenueError.set(e?.error?.detail ?? "Revenue forecast unavailable."); this.revenueLoading.set(false); }
     });
   }
 
