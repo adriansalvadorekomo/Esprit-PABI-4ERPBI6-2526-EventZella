@@ -382,7 +382,7 @@ This project focuses on **Business Intelligence**, **Data Engineering**, and **E
 ## Repository Topics
 
 `esprit-school-of-engineering` `academic-project` `esprit-pidev` `2025-2026`  
-`business-intelligence` `angular` `flask` `postgresql` `talend` `apache-airflow` `n8n` `threejs` `machine-learning`
+`business-intelligence` `data-engineering` `angular` `flask` `postgresql` `talend` `apache-airflow` `n8n` `threejs` `machine-learning`
 
 ---
 
